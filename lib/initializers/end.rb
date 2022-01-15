@@ -1,0 +1,3 @@
+# Finishing program
+
+DB.disconnect
