@@ -33,7 +33,7 @@ CREATE TABLE  IF NOT EXISTS  payments (
 
 CREATE VIEW  IF NOT EXISTS  v_accounts  AS
   SELECT
-    a.id AS account_id,
+    a.id,
     a.created_at,
     a.updated_at,
     a.name,
@@ -45,7 +45,7 @@ CREATE VIEW  IF NOT EXISTS  v_accounts  AS
 
 CREATE VIEW  IF NOT EXISTS  v_payments  AS
   SELECT
-    p.id AS payment_id,
+    p.id,
     p.created_at,
     p.updated_at,
     a_from.name AS from_account,
