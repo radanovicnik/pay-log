@@ -12,17 +12,17 @@ module DbTable
       record_str = <<~RECORD_STR
         ID: #{record[:id]}
         Name: #{record[:name]}
-        Balance: #{record[:balance].round(2).to_s('F')} #{record[:currency]}
-        Created at: #{record[:created_at]}
-        Updated at: #{record[:updated_at]}
+        Balance: #{Console.format_money(record[:balance].round(2))} #{record[:currency]}
+        Created at: #{Time.at(record[:created_at]).strftime('%d.%m.%Y. %H:%M')}
+        Updated at: #{Time.at(record[:updated_at]).strftime('%d.%m.%Y. %H:%M')}
 
       RECORD_STR
     when :payments
       record_str = <<~RECORD_STR
-        [#{record[:created_at]}] ID: #{record[:id]}
+        [#{Time.at(record[:created_at]).strftime('%d.%m.%Y. %H:%M')}] ID: #{record[:id]}
         From: #{record[:from_account]}
         To: #{record[:to_account]}
-        Amount: #{record[:amount].round(2).to_s('F')} #{record[:currency]}
+        Amount: #{Console.format_money(record[:amount].round(2))} #{record[:currency]}
         Description: #{record[:description]}
         
       RECORD_STR
