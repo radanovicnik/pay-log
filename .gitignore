@@ -1,4 +1,9 @@
-Gemfile.lock
-pay_log.db
-tmp.rb
-test.rb
+# directories
+/tmp/
+
+# files
+/Gemfile.lock
+/pay_log.db
+/tmp.rb
+/test.rb
+/config.yml
