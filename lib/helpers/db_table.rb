@@ -57,14 +57,8 @@ module DbTable
           .first
         new_record["#{prefix}_account_id".to_sym] = tmp.nil? ? nil : tmp[:id]
 
-        if new_record["#{prefix}_account_id".to_sym].nil?
-          new_accounts[prefix.to_sym] = account_name
-        end
+        new_accounts[prefix.to_sym] = account_name if new_record["#{prefix}_account_id".to_sym].nil?
       end
-
-      pp record
-      pp new_record
-      pp new_accounts
       
       DB.transaction do
         new_accounts.each do |key, val|
