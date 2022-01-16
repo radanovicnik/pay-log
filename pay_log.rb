@@ -109,7 +109,7 @@ loop do
       when :accounts
         case command
         when /^n/
-          tmp = command.scan(/^n\s*(.*)/).flatten[0].to_s
+          tmp = command.scan(/^n\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
             puts Content.error_invalid_value('name')
           else
@@ -128,7 +128,7 @@ loop do
       when :payments
         case command
         when /^f/
-          tmp = command.scan(/^f\s*(.*)/).flatten[0].to_s
+          tmp = command.scan(/^f\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
             puts Content.error_invalid_value('from_name')
           else
@@ -136,7 +136,7 @@ loop do
           end
           next
         when /^t/
-          tmp = command.scan(/^t\s*(.*)/).flatten[0].to_s
+          tmp = command.scan(/^t\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
             puts Content.error_invalid_value('to_name')
           else
@@ -144,7 +144,7 @@ loop do
           end
           next
         when /^d/
-          tmp = command.scan(/^d\s*(.*)/).flatten[0].to_s
+          tmp = command.scan(/^d\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
             puts Content.error_invalid_value('description')
           else
@@ -164,7 +164,7 @@ loop do
 
       case command
       when /^c/
-        tmp = command.scan(/^c\s*(.*)/).flatten[0].to_s.upcase
+        tmp = command.scan(/^c\s*(.*)/).flatten[0].to_s.strip.upcase
         if tmp.empty? || !CURRENCIES.include?(tmp)
           puts Content.error_invalid_value('currency')
         else

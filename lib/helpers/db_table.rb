@@ -32,12 +32,54 @@ module DbTable
 
   def self.insert(table, record)
     new_record = {}
+    tmp = DB[:currencies].first(Sequel.like(:name, record[:currency]))
+    currency_id = tmp.nil? ? nil : tmp[:id]
+    new_record_id = nil
+
     case table
     when :accounts
-      DB[table].insert(
-        {}
-      )
+      new_record.merge! record.filter{|k, _| %i(name balance).include?(k)}
+      new_record[:currency_id] = currency_id
+
+      new_record_id = DB[:accounts].insert(new_record)
+
     when :payments
+      new_record.merge! record.filter{|k, _| %i(description amount).include?(k)}
+      new_accounts = {}
+
+      %w(from to).each do |prefix|
+        tmp = DB[:accounts]
+          .where(Sequel.like(:name, record["#{prefix}_name".to_sym]))
+          .where(currency_id: currency_id)
+          .first
+        new_record["#{prefix}_account_id".to_sym] = tmp.nil? ? nil : tmp[:id]
+
+        if new_record["#{prefix}_account_id".to_sym].nil? && !record["#{prefix}_name".to_sym].empty?
+          new_accounts[prefix.to_sym] = record["#{prefix}_name".to_sym]
+        end
+      end
+
+      pp record
+      pp new_record
+      pp new_accounts
+      
+      DB.transaction do
+        new_accounts.each do |key, val|
+          new_record["#{key}_account_id".to_sym] = DB[:accounts].insert(
+            name: val,
+            balance: 0,
+            currency_id: currency_id
+          )
+        end
+        DB[:accounts].where(id: new_record[:from_account_id]).update(balance: Sequel[:balance] - new_record[:amount])
+        DB[:accounts].where(id: new_record[:to_account_id]).update(balance: Sequel[:balance] + new_record[:amount])
+        new_record_id = DB[:payments].insert(new_record)
+      end
     end
+
+    new_record_id
+  end
+
+  def self.update(table, id, record)
   end
 end
