@@ -32,3 +32,4 @@ DB.loggers << Logger.new($stdout)
 
 CURRENCIES = DB[:currencies].all.map{|c| c[:name]}.freeze
 DEFAULT_PROMPT = 'pay_log> '.freeze
+DEFAULT_UNKNOWN_ACCOUNT = 'other'.freeze

@@ -48,14 +48,17 @@ module DbTable
       new_accounts = {}
 
       %w(from to).each do |prefix|
+        account_name = record["#{prefix}_name".to_sym]
+        account_name = DEFAULT_UNKNOWN_ACCOUNT if account_name.to_s.empty?
+
         tmp = DB[:accounts]
-          .where(Sequel.like(:name, record["#{prefix}_name".to_sym]))
+          .where(Sequel.like(:name, account_name))
           .where(currency_id: currency_id)
           .first
         new_record["#{prefix}_account_id".to_sym] = tmp.nil? ? nil : tmp[:id]
 
-        if new_record["#{prefix}_account_id".to_sym].nil? && !record["#{prefix}_name".to_sym].empty?
-          new_accounts[prefix.to_sym] = record["#{prefix}_name".to_sym]
+        if new_record["#{prefix}_account_id".to_sym].nil?
+          new_accounts[prefix.to_sym] = account_name
         end
       end
 
