@@ -161,29 +161,31 @@ module DbTable
         end
       end
 
-      DB.transaction do
-        new_accounts.each do |key, val|
-          new_data[:"#{key}_account_id"] = DB[:accounts].insert(
-            name: val,
-            balance: 0,
-            currency_id: currency_id
-          )
-        end
-        
-        unless new_data[:amount].nil?
-          amount_diff = new_data[:amount] - old_record[:amount]
-          DB[:accounts].where(id: new_record[:from_account_id]).update(
-            balance: Sequel[:balance] - amount_diff,
-            updated_at: Time.now.to_i
-          )
-          DB[:accounts].where(id: new_record[:to_account_id]).update(
-            balance: Sequel[:balance] + amount_diff,
-            updated_at: Time.now.to_i
-          )
-        end
+      unless new_data.empty?
+        DB.transaction do
+          new_accounts.each do |key, val|
+            new_data[:"#{key}_account_id"] = DB[:accounts].insert(
+              name: val,
+              balance: 0,
+              currency_id: currency_id
+            )
+          end
+          
+          unless new_data[:amount].nil?
+            amount_diff = new_data[:amount] - old_record[:amount]
+            DB[:accounts].where(id: new_data[:from_account_id] || old_record[:from_account_id]).update(
+              balance: Sequel[:balance] - amount_diff,
+              updated_at: Time.now.to_i
+            )
+            DB[:accounts].where(id: new_data[:to_account_id] || old_record[:to_account_id]).update(
+              balance: Sequel[:balance] + amount_diff,
+              updated_at: Time.now.to_i
+            )
+          end
 
-        new_data[:updated_at] = Time.now.to_i
-        updated_count = DB[:payments].where(id: id).update(new_data)
+          new_data[:updated_at] = Time.now.to_i
+          updated_count = DB[:payments].where(id: id).update(new_data)
+        end
       end
     end
 
