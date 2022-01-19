@@ -41,6 +41,16 @@ module DbTable
       new_record.merge! record.slice(:name, :balance)
       new_record[:currency_id] = currency_id
 
+      # throw exception if trying to insert an existing account
+      check_record = DB[:accounts]
+          .where(Sequel.like(:name, new_record[:name]))
+          .where(currency_id: currency_id)
+          .first
+      unless check_record.nil?
+        raise ArgumentError.new('Account already exists!')
+        return nil
+      end
+
       new_record_id = DB[:accounts].insert(new_record)
 
     when :payments
@@ -101,6 +111,7 @@ module DbTable
       # currency of account is not changeable
       currency_id = old_record[:currency_id]
 
+      # throw exception if trying to rename to existing account
       unless new_data[:name].nil?
         check_record = DB[:accounts]
             .where(Sequel.like(:name, new_data[:name]))
