@@ -1,5 +1,6 @@
 # directories
 /tmp/
+# /logs/
 
 # files
 /Gemfile.lock
