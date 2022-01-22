@@ -49,7 +49,7 @@ module Content
     end
     help_message << <<~HELP_MESSAGE
       Actions:
-        [s]ave, [q]uit, [?] help
+        [s]ave, [q]uit (back to menu), [?] help
     HELP_MESSAGE
     help_message
   end

@@ -30,6 +30,33 @@ module DbTable
     record_str
   end
 
+  def self.field_to_string(name, value)
+    if [BigDecimal, Float].include? value.class
+      value = Console.format_money(value)
+    end
+
+    "#{name.to_s.gsub('_', ' ').capitalize}: #{value}"
+  end
+
+  def self.check_empty_fields(record, fields)
+    empty_fields = fields.filter? { |k| record[k].nil? }
+    unless empty_fields.empty?
+      raise ArgumentError.new("There are some empty fields left!\n(#{empty_fields.join(', ')})")
+    end
+    return nil
+  end
+
+  def self.check_existing_account(name, currency_id)
+    check_record = DB[:accounts]
+        .where(Sequel.like(:name, name))
+        .where(currency_id: currency_id)
+        .first
+    unless check_record.nil?
+      raise ArgumentError.new('Account already exists!')
+    end
+    return nil
+  end
+
   def self.insert(table, record)
     new_record = {}
     tmp = DB[:currencies].first(Sequel.like(:name, record[:currency]))
@@ -38,22 +65,19 @@ module DbTable
 
     case table
     when :accounts
+      check_empty_fields(record, %i(name balance currency))
+
       new_record.merge! record.slice(:name, :balance)
       new_record[:currency_id] = currency_id
 
       # throw exception if trying to insert an existing account
-      check_record = DB[:accounts]
-          .where(Sequel.like(:name, new_record[:name]))
-          .where(currency_id: currency_id)
-          .first
-      unless check_record.nil?
-        raise ArgumentError.new('Account already exists!')
-        return nil
-      end
+      check_existing_account(new_record[:name], currency_id)
 
       new_record_id = DB[:accounts].insert(new_record)
 
     when :payments
+      check_empty_fields(record, %i(description amount currency from_name to_name))
+
       new_record.merge! record.slice(:description, :amount)
       new_accounts = {}
 
@@ -112,16 +136,7 @@ module DbTable
       currency_id = old_record[:currency_id]
 
       # throw exception if trying to rename to existing account
-      unless new_data[:name].nil?
-        check_record = DB[:accounts]
-            .where(Sequel.like(:name, new_data[:name]))
-            .where(currency_id: currency_id)
-            .first
-        unless check_record.nil?
-          raise ArgumentError.new('Account already exists!')
-          return nil
-        end
-      end
+      check_existing_account(new_data[:name], currency_id) unless new_data[:name].nil?
 
       unless new_data.empty?
         new_data[:updated_at] = Time.now.to_i

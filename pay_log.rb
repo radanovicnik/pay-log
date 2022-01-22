@@ -89,6 +89,7 @@ loop do
   # Edit record
   when 'edit'
     record = {}
+    old_record = {}
     if record_id.nil?
       case table
       when :accounts
@@ -97,66 +98,79 @@ loop do
         record = %i(from_name to_name description amount currency).map{|x| [x, nil]}.to_h
       end
     else
-      record = DbTable.get_by_id(table, record_id)
-      puts DbTable.record_to_string(table, record)
+      old_record = DbTable.get_by_id(table, record_id)
+      puts DbTable.record_to_string(table, old_record)
     end
     puts Content.mode_edit_help(table)
 
     loop do
+      field = nil
       command = Console.get_input prompt
 
       case table
       when :accounts
         case command
         when /^n/
+          field = :name
           tmp = command.scan(/^n\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
-            puts Content.error_invalid_value('name')
+            puts Content.error_invalid_value(field)
           else
-            record[:name] = tmp
+            record[field] = tmp
+            puts DbTable.field_to_string(field, record[field])
           end
           next
         when /^b/
+          field = :balance
           tmp = BigDecimal(command.scan(/^b\s*(.*)/).flatten[0].to_s) rescue nil
           if tmp.nil?
-            puts Content.error_invalid_value('balance')
+            puts Content.error_invalid_value(field)
           else
-            record[:balance] = tmp
+            record[field] = tmp
+            puts DbTable.field_to_string(field, record[field])
           end
           next
         end
       when :payments
         case command
         when /^f/
+          field = :from_name
           tmp = command.scan(/^f\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
-            puts Content.error_invalid_value('from_name')
+            puts Content.error_invalid_value(field)
           else
-            record[:from_name] = tmp
+            record[field] = tmp
+            puts DbTable.field_to_string(field, record[field])
           end
           next
         when /^t/
+          field = :to_name
           tmp = command.scan(/^t\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
-            puts Content.error_invalid_value('to_name')
+            puts Content.error_invalid_value(field)
           else
-            record[:to_name] = tmp
+            record[field] = tmp
+            puts DbTable.field_to_string(field, record[field])
           end
           next
         when /^d/
+          field = :description
           tmp = command.scan(/^d\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
-            puts Content.error_invalid_value('description')
+            puts Content.error_invalid_value(field)
           else
-            record[:description] = tmp
+            record[field] = tmp
+            puts DbTable.field_to_string(field, record[field])
           end
           next
         when /^a/
+          field = :amount
           tmp = BigDecimal(command.scan(/^a\s*(.*)/).flatten[0].to_s) rescue nil
           if tmp.nil?
-            puts Content.error_invalid_value('amount')
+            puts Content.error_invalid_value(field)
           else
-            record[:amount] = tmp
+            record[field] = tmp
+            puts DbTable.field_to_string(field, record[field])
           end
           next
         end
@@ -164,11 +178,13 @@ loop do
 
       case command
       when /^c/
+        field = :currency
         tmp = command.scan(/^c\s*(.*)/).flatten[0].to_s.strip.upcase
         if tmp.empty? || !CURRENCIES.include?(tmp)
-          puts Content.error_invalid_value('currency')
+          puts Content.error_invalid_value(field)
         else
-          record[:currency] = tmp
+          record[field] = tmp
+          puts DbTable.field_to_string(field, record[field])
         end
         next
       when '?'
@@ -181,15 +197,18 @@ loop do
         break
       when 's'
         # Save changes
-        if record_id.nil?
-          DB[table].insert(record)
-        else
-          old_record = DbTable.get_by_id(table, record_id)
-          record_changes = record.filter { |k, v| v != old_record[k] }
-          unless record_changes.empty?
-            DB[table].update(record_changes)
+        begin
+          if record_id.nil?
+            DbTable.insert(table, record)
+          else
+            DbTable.update(table, record_id, record)
           end
+          puts "\nRecord saved!\n\n"
+          puts DbTable.record_to_string(table, record)
+        rescue ArgumentError => e
+          puts e.message
         end
+        next
       end
     end
   when 'delete'
