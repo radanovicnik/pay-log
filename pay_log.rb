@@ -15,7 +15,6 @@ loop do
   # Main menu
   when 'menu'
     record_id = nil
-
     command = Console.get_input prompt
 
     # Main menu: general commands, pick table
@@ -211,7 +210,64 @@ loop do
         next
       end
     end
+
+  # Delete record
   when 'delete'
+    replacement_account = nil
+    old_record = DbTable.get_by_id(table, record_id)
+    puts DbTable.record_to_string(table, old_record)
+    puts Content.mode_delete_help(table)
+
+    loop do
+      command = Console.get_input prompt
+
+      case table
+      when :accounts
+        case command
+        when /^n/
+          tmp = command.scan(/^n\s*(.*)/).flatten[0].to_s.strip
+          if tmp.empty?
+            puts Content.error_invalid_value(:name)
+          else
+            replacement_account = tmp
+            puts DbTable.field_to_string(:name, replacement_account)
+          end
+          next
+        end
+      end
+
+      case command
+      when '?'
+        puts Content.mode_delete_help(table)
+        next
+      when ''
+        next
+      when 'q'
+        prompt = DEFAULT_PROMPT
+        break
+      when 's'
+        # Start deletion
+        print 'Delete this record (y/n)? '
+        command = gets.strip.downcase
+
+        if command == 'y'
+          begin
+            DbTable.delete(table, record_id, replacement_account)
+          rescue ArgumentError => e
+            puts e.message
+          else
+            puts "Record deleted.\n\n"
+            prompt = DEFAULT_PROMPT
+          ensure
+            break
+          end
+        else
+          puts "Deletion cancelled.\n\n"
+        end
+        next
+      end
+    end
+
   when 'list'
   else
     puts Content.error_unknown_mode

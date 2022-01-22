@@ -37,12 +37,12 @@ module Content
     help_message = ''
     case table
     when :accounts
-      help_message = <<~HELP_MESSAGE
+      help_message << <<~HELP_MESSAGE
         Type first letters to fill out these fields:
           [n]ame, [b]alance, [c]urrency
       HELP_MESSAGE
     when :payments
-      help_message = <<~HELP_MESSAGE
+      help_message << <<~HELP_MESSAGE
         Type first letters to fill out these fields:
           [f]rom_name, [t]o_name, [d]escription, [a]mount, [c]urrency
       HELP_MESSAGE
@@ -50,6 +50,29 @@ module Content
     help_message << <<~HELP_MESSAGE
       Actions:
         [s]ave, [q]uit (back to menu), [?] help
+    HELP_MESSAGE
+    help_message
+  end
+
+  def self.mode_delete_help(table)
+    help_message = ''
+    case table
+    when :accounts
+      help_message << <<~HELP_MESSAGE
+        You are about to delete this account.
+        Fill out the name with which to replace it in past payments:
+        (Optional - if not filled, will be replaced by "#{DEFAULT_UNKNOWN_ACCOUNT}")
+          [n]ame
+      HELP_MESSAGE
+    when :payments
+      help_message << <<~HELP_MESSAGE
+        You are about to delete this payment record.
+        Money will be returned to respective accounts.
+      HELP_MESSAGE
+    end
+    help_message << <<~HELP_MESSAGE
+      Actions:
+        [s]tart (deletion), [q]uit (back to menu), [?] help
     HELP_MESSAGE
     help_message
   end

@@ -39,14 +39,14 @@ module DbTable
   end
 
   def self.check_empty_fields(record, fields)
-    empty_fields = fields.filter? { |k| record[k].nil? }
+    empty_fields = fields.filter { |k| record[k].nil? }
     unless empty_fields.empty?
       raise ArgumentError.new("There are some empty fields left!\n(#{empty_fields.join(', ')})")
     end
     return nil
   end
 
-  def self.check_existing_account(name, currency_id)
+  def self.handle_existing_account(name, currency_id)
     check_record = DB[:accounts]
         .where(Sequel.like(:name, name))
         .where(currency_id: currency_id)
@@ -55,6 +55,34 @@ module DbTable
       raise ArgumentError.new('Account already exists!')
     end
     return nil
+  end
+
+  def self.find_or_create_account(name, currency_id)
+    record = DB[:accounts]
+        .where(Sequel.like(:name, name))
+        .where(currency_id: currency_id)
+        .first
+    id = record.nil? ? nil : record[:id]
+    if id.nil?
+      id = DB[:accounts].insert(
+        name: name,
+        balance: 0,
+        currency_id: currency_id
+      )
+    end
+    return id
+  end
+
+  def self.update_account_balance(account_id)
+    sent_payments = DB[:payments].select(:amount).where(from_account_id: account_id).all
+    received_payments = DB[:payments].select(:amount).where(to_account_id: account_id).all
+
+    account_balance = received_payments.map{|r| r[:amount]}.sum - sent_payments.map{|r| r[:amount]}.sum
+
+    DB[:accounts].where(id: account_id).update(
+      balance: account_balance,
+      updated_at: Time.now.to_i
+    )
   end
 
   def self.insert(table, record)
@@ -71,37 +99,35 @@ module DbTable
       new_record[:currency_id] = currency_id
 
       # throw exception if trying to insert an existing account
-      check_existing_account(new_record[:name], currency_id)
+      handle_existing_account(new_record[:name], currency_id)
 
-      new_record_id = DB[:accounts].insert(new_record)
+      DB.transaction do
+        new_record_id = DB[:accounts].insert(new_record)
+
+        if new_record[:balance] != 0.to_d
+          insert(:payments, {
+            from_name: (new_record[:balance] > 0.to_d) ? DEFAULT_UNKNOWN_ACCOUNT : account_name,
+            to_name: (new_record[:balance] > 0.to_d) ? account_name : DEFAULT_UNKNOWN_ACCOUNT,
+            currency: record[:currency],
+            amount: new_record[:balance].abs,
+            description: '[SYSTEM] Setting account balance.'
+          })
+        end
+      end
 
     when :payments
       check_empty_fields(record, %i(description amount currency from_name to_name))
 
       new_record.merge! record.slice(:description, :amount)
-      new_accounts = {}
-
-      %w(from to).each do |prefix|
-        account_name = record[:"#{prefix}_name"]
-        account_name = DEFAULT_UNKNOWN_ACCOUNT if account_name.to_s.empty?
-
-        tmp = DB[:accounts]
-            .where(Sequel.like(:name, account_name))
-            .where(currency_id: currency_id)
-            .first
-        new_record[:"#{prefix}_account_id"] = tmp.nil? ? nil : tmp[:id]
-
-        new_accounts[prefix.to_sym] = account_name if new_record[:"#{prefix}_account_id"].nil?
-      end
       
       DB.transaction do
-        new_accounts.each do |key, val|
-          new_record[:"#{key}_account_id"] = DB[:accounts].insert(
-            name: val,
-            balance: 0,
-            currency_id: currency_id
-          )
+        %w(from to).each do |prefix|
+          account_name = record[:"#{prefix}_name"]
+          account_name = DEFAULT_UNKNOWN_ACCOUNT if account_name.to_s.empty?
+          
+          new_record[:"#{prefix}_account_id"] = find_or_create_account(account_name, currency_id)
         end
+
         DB[:accounts].where(id: new_record[:from_account_id]).update(
           balance: Sequel[:balance] - new_record[:amount],
           updated_at: Time.now.to_i
@@ -136,29 +162,30 @@ module DbTable
       currency_id = old_record[:currency_id]
 
       # throw exception if trying to rename to existing account
-      check_existing_account(new_data[:name], currency_id) unless new_data[:name].nil?
+      handle_existing_account(new_data[:name], currency_id) unless new_data[:name].nil?
 
-      unless new_data.empty?
-        new_data[:updated_at] = Time.now.to_i
-        updated_count = DB[:accounts].where(id: id).update(new_data)
-      end
+      DB.transaction do
+        unless new_data.empty?
+          new_data[:updated_at] = Time.now.to_i
+          updated_count = DB[:accounts].where(id: id).update(new_data)
+        end
 
-      unless new_balance.nil?
-        balance_diff = new_balance - old_record[:balance]
-        account_name = new_data[:name] || old_record[:name]
-        if balance_diff != 0.to_d
-          insert(:payments, {
-            from_name: (balance_diff > 0.to_d) ? DEFAULT_UNKNOWN_ACCOUNT : account_name,
-            to_name: (balance_diff > 0.to_d) ? account_name : DEFAULT_UNKNOWN_ACCOUNT,
-            currency: DB[:currencies].first(id: currency_id)[:name],
-            amount: balance_diff.abs,
-            description: "Manual balance update."
-          })
+        unless new_balance.nil?
+          balance_diff = new_balance - old_record[:balance]
+          account_name = new_data[:name] || old_record[:name]
+          if balance_diff != 0.to_d
+            insert(:payments, {
+              from_name: (balance_diff > 0.to_d) ? DEFAULT_UNKNOWN_ACCOUNT : account_name,
+              to_name: (balance_diff > 0.to_d) ? account_name : DEFAULT_UNKNOWN_ACCOUNT,
+              currency: DB[:currencies].first(id: currency_id)[:name],
+              amount: balance_diff.abs,
+              description: '[SYSTEM] Updating account balance.'
+            })
+          end
         end
       end
 
     when :payments
-      new_accounts = {}
       %i(description amount).each do |column|
         if !record[column].nil? && record[column] != old_record[column]
           new_data[column] = record[column]
@@ -168,47 +195,32 @@ module DbTable
       # currency of payment is not changeable
       tmp = DB[:accounts].first(id: [old_record[:from_account_id], old_record[:to_account_id]].compact)
       currency_id = tmp.nil? ? nil : tmp[:currency_id]
-      
-      %w(from to).each do |prefix|
-        account_name = record[:"#{prefix}_name"]
 
-        if !account_name.nil? && !currency_id.nil?
-          tmp = DB[:accounts]
-              .where(Sequel.like(:name, account_name))
-              .where(currency_id: currency_id)
-              .first
-          account_id = tmp.nil? ? nil : tmp[:id]
-
-          if !account_id.nil? && account_id != old_record[:"#{prefix}_account_id"]
+      DB.transaction do
+        %w(from to).each do |prefix|
+          account_name = record[:"#{prefix}_name"]
+          account_id = nil
+          if !account_name.nil? && !currency_id.nil?
+            account_id = find_or_create_account(account_name, currency_id)
+          end
+          unless account_id == old_record[:"#{prefix}_account_id"]
             new_data[:"#{prefix}_account_id"] = account_id
-          elsif account_id.nil?
-            new_accounts[prefix.to_sym] = account_name
           end
         end
-      end
+        
+        unless new_data[:amount].nil?
+          amount_diff = new_data[:amount] - old_record[:amount]
+          DB[:accounts].where(id: new_data[:from_account_id] || old_record[:from_account_id]).update(
+            balance: Sequel[:balance] - amount_diff,
+            updated_at: Time.now.to_i
+          )
+          DB[:accounts].where(id: new_data[:to_account_id] || old_record[:to_account_id]).update(
+            balance: Sequel[:balance] + amount_diff,
+            updated_at: Time.now.to_i
+          )
+        end
 
-      unless new_data.empty?
-        DB.transaction do
-          new_accounts.each do |key, val|
-            new_data[:"#{key}_account_id"] = DB[:accounts].insert(
-              name: val,
-              balance: 0,
-              currency_id: currency_id
-            )
-          end
-          
-          unless new_data[:amount].nil?
-            amount_diff = new_data[:amount] - old_record[:amount]
-            DB[:accounts].where(id: new_data[:from_account_id] || old_record[:from_account_id]).update(
-              balance: Sequel[:balance] - amount_diff,
-              updated_at: Time.now.to_i
-            )
-            DB[:accounts].where(id: new_data[:to_account_id] || old_record[:to_account_id]).update(
-              balance: Sequel[:balance] + amount_diff,
-              updated_at: Time.now.to_i
-            )
-          end
-
+        unless new_data.empty?
           new_data[:updated_at] = Time.now.to_i
           updated_count = DB[:payments].where(id: id).update(new_data)
         end
@@ -216,5 +228,58 @@ module DbTable
     end
 
     return updated_count
+  end
+
+  def self.delete(table, id, replacement_account = nil)
+    record = DB[table].first(id: id)
+    if record.nil?
+      raise ArgumentError.new("No record in table \"#{table}\" with id = #{id}")
+      return nil
+    end
+
+    case table
+    when :accounts
+      new_account_id = nil
+
+      unless replacement_account.nil?
+        tmp = DB[:accounts]
+            .where(Sequel.like(:name, replacement_account))
+            .where(currency_id: record[:currency_id])
+            .first
+        replacement_id = tmp.nil? ? nil : tmp[:id]
+
+        if replacement_id.nil?
+          return update(:accounts, id, {name: replacement_account})
+        else
+          new_account_id = replacement_id
+        end
+      else
+        new_account_id = find_or_create_account(DEFAULT_UNKNOWN_ACCOUNT, record[:currency_id])
+      end
+
+      DB.transaction do
+        %w(from to).each do |prefix|
+          DB[:payments].where(:"#{prefix}_account_id" => id).update(
+            :"#{prefix}_account_id" => new_account_id,
+            :updated_at => Time.now.to_i
+          )
+        end
+        update_account_balance(id)
+        DB[:accounts].where(id: id).delete
+      end
+
+    when :payments
+      DB.transaction do
+        DB[:accounts].where(id: record[:from_account_id]).update(
+          balance: Sequel[:balance] + record[:amount],
+          updated_at: Time.now.to_i
+        )
+        DB[:accounts].where(id: record[:to_account_id]).update(
+          balance: Sequel[:balance] - record[:amount],
+          updated_at: Time.now.to_i
+        )
+        DB[:payments].where(id: id).delete
+      end
+    end
   end
 end
