@@ -247,7 +247,7 @@ loop do
         break
       when 's'
         # Start deletion
-        print 'Delete this record (y/n)? '
+        print 'Delete this record? [y/n]  '
         command = gets.strip.downcase
 
         if command == 'y'
