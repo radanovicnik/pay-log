@@ -174,7 +174,7 @@ module DbTable
           balance_diff = new_balance - old_record[:balance]
           account_name = new_data[:name] || old_record[:name]
           if balance_diff != 0.to_d
-            insert(:payments, {
+            updated_count = insert(:payments, {
               from_name: (balance_diff > 0.to_d) ? DEFAULT_UNKNOWN_ACCOUNT : account_name,
               to_name: (balance_diff > 0.to_d) ? account_name : DEFAULT_UNKNOWN_ACCOUNT,
               currency: DB[:currencies].first(id: currency_id)[:name],
@@ -233,7 +233,7 @@ module DbTable
   def self.delete(table, id, replacement_account = nil)
     record = DB[table].first(id: id)
     if record.nil?
-      raise ArgumentError.new("No record in table \"#{table}\" with id = #{id}")
+      raise ArgumentError.new("No record in table \"#{table}\" with id = #{id.inspect}")
       return nil
     end
 
@@ -249,7 +249,8 @@ module DbTable
         replacement_id = tmp.nil? ? nil : tmp[:id]
 
         if replacement_id.nil?
-          return update(:accounts, id, {name: replacement_account})
+          raise ArgumentError.new("Replacement account named \"#{replacement_account}\" doesn't exist!")
+          return nil
         else
           new_account_id = replacement_id
         end
@@ -264,8 +265,8 @@ module DbTable
             :updated_at => Time.now.to_i
           )
         end
-        update_account_balance(id)
         DB[:accounts].where(id: id).delete
+        update_account_balance(new_account_id)
       end
 
     when :payments
