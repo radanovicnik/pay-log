@@ -9,6 +9,8 @@ command = ''
 table = :payments
 record_id = nil
 
+puts Content.title
+
 loop do
   case mode
 
@@ -23,6 +25,7 @@ loop do
       puts Content.exit
       break
     when '?'
+      puts
       puts Content.help
       next
     when ''
@@ -203,6 +206,9 @@ loop do
           puts e.message
         end
         next
+      else
+        puts Content.error_unknown_command
+        next
       end
     end
 
@@ -261,6 +267,9 @@ loop do
         else
           puts "Deletion cancelled.\n\n"
         end
+        next
+      else
+        puts Content.error_unknown_command
         next
       end
     end
@@ -330,6 +339,9 @@ loop do
         records = DbTable.get_all(table, filters)
         puts
         records.each { |r| puts DbTable.record_to_string(table, r) }
+        next
+      else
+        puts Content.error_unknown_command
         next
       end
     end

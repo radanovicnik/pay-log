@@ -1,4 +1,14 @@
 module Content
+  def self.title
+    title_text = <<~TITLE_TEXT
+
+      ###############
+      ##  PAY LOG  ##
+      ###############
+    TITLE_TEXT
+    title_text.gsub("\n", "\n  ")
+  end
+
   def self.help
     help_message = <<~MESSAGE_TEXT
       Program for keeping track of payments and current money amount.
