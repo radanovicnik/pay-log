@@ -29,6 +29,8 @@ if File.exist? 'config/custom.yml'
 end
 CONFIG = config_tmp
 
+Dir.mkdir('logs') unless File.exist?('logs')
+
 begin
   DB = Sequel.sqlite(
     CONFIG[:database][:path],
