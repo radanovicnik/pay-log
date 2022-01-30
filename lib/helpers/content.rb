@@ -2,12 +2,20 @@ module Content
   def self.help
     help_message = <<~MESSAGE_TEXT
       Program for keeping track of payments and current money amount.
-      Available commands:
-       'n' - Write new transaction
-       'e' - Edit an existing transaction
-       'd' - Delete a transaction
-       'q' - Quit program
-       '?' - Show this help message
+      Type first letters to use any of the available commands.
+      Simple commands:
+        [q]uit, [?] help
+      For viewing or editing records, first pick a type (again using first letter):
+        [a]ccounts, [p]ayments
+      Then choose what you want to do:
+        [e]dit (an existing record, or create a new one),
+        [d]elete (an existing record),
+        [l]ist (records)
+      Some command examples:
+        ae 3 -- edit an account with the ID 3
+        pl -- list payments
+        pe -- create a new payment
+        q -- quit program
 
     MESSAGE_TEXT
     help_message
@@ -50,6 +58,7 @@ module Content
     help_message << <<~MESSAGE_TEXT
       Actions:
         [s]ave, [q]uit (back to menu), [?] help
+      
     MESSAGE_TEXT
     help_message
   end
@@ -73,6 +82,7 @@ module Content
     help_message << <<~MESSAGE_TEXT
       Actions:
         [s]tart (deletion), [q]uit (back to menu), [?] help
+      
     MESSAGE_TEXT
     help_message
   end
@@ -84,6 +94,7 @@ module Content
         [w]ord (for searching), [l]imit, [o]ffset
       Actions:
         [s]earch, [q]uit (back to menu), [?] help
+      
     MESSAGE_TEXT
     help_message
   end

@@ -1,7 +1,9 @@
 require_relative 'lib/initializers/start'
 require_all 'lib/helpers'
 
-mode = Mode.change 'menu'
+# Modes:
+# :menu, :edit, :delete, :list
+mode = :menu
 prompt = DEFAULT_PROMPT
 command = ''
 table = :payments
@@ -11,7 +13,7 @@ loop do
   case mode
 
   # Main menu
-  when 'menu'
+  when :menu
     record_id = nil
     command = Console.get_input prompt
 
@@ -36,18 +38,13 @@ loop do
 
     command = command.scan(/^[ap]\s*([edl].*)/).flatten[0].to_s
 
-    pp 'Table picked'
-    pp command
-
     # table commands
     case command
-
     # Main menu - table: edit
     when /^e/
       command = command.scan(/^e\s*(.*)/).flatten[0].to_s
-      pp command
 
-      mode = Mode.change 'edit'
+      mode = :edit
       record_id = Integer(command) rescue nil
       if command.empty? || record_id.nil?
         prompt = "#{table}|new> "
@@ -58,23 +55,21 @@ loop do
     # Main menu - table: delete
     when /^d/
       command = command.scan(/^d\s*(.*)/).flatten[0].to_s
-      pp command
 
       record_id = Integer(command) rescue nil
       if command.empty? || record_id.nil?
         puts Content.error_unknown_command
         next
       else
-        mode = Mode.change 'delete'
+        mode = :delete
         prompt = "#{table}|delete|#{record_id}> "
       end
 
     # Main menu - table: list
     when /^l/
       command = command.scan(/^l\s*(.*)/).flatten[0].to_s
-      pp command
 
-      mode = Mode.change 'list'
+      mode = :list
       prompt = "#{table}|list> "
 
     # Main menu - table: -
@@ -84,9 +79,10 @@ loop do
     end
 
   # Edit record
-  when 'edit'
+  when :edit
     record = {}
     old_record = {}
+    puts
     if record_id.nil?
       case table
       when :accounts
@@ -190,6 +186,7 @@ loop do
       when ''
         next
       when 'q'
+        mode = :menu
         prompt = DEFAULT_PROMPT
         break
       when 's'
@@ -210,9 +207,10 @@ loop do
     end
 
   # Delete record
-  when 'delete'
+  when :delete
     replacement_account = nil
     old_record = DbTable.get_by_id(table, record_id)
+    puts
     puts DbTable.record_to_string(table, old_record)
     puts Content.mode_delete_help(table)
 
@@ -241,6 +239,7 @@ loop do
       when ''
         next
       when 'q'
+        mode = :menu
         prompt = DEFAULT_PROMPT
         break
       when 's'
@@ -267,16 +266,18 @@ loop do
     end
 
   # Display records
-  when 'list'
-    command = Console.get_input prompt
+  when :list
     filters = {
       search_word: '',
       limit: DEFAULT_PAGE_SIZE,
       offset: nil
     }
+    puts
     puts Content.mode_list_help
 
     loop do
+      command = Console.get_input prompt
+
       case command
       when /^w/
         name = :search_word
@@ -314,17 +315,20 @@ loop do
       when ''
         next
       when 'q'
+        mode = :menu
         prompt = DEFAULT_PROMPT
         break
       when 's'
         # Search using given parameters
         records = DbTable.get_all(table, filters)
+        puts
         records.each { |r| puts DbTable.record_to_string(table, r) }
         next
       when 'n'
         # Search next page
         filters[:offset] = filters[:offset].to_i + filters[:limit]
         records = DbTable.get_all(table, filters)
+        puts
         records.each { |r| puts DbTable.record_to_string(table, r) }
         next
       end

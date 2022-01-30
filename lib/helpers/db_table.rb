@@ -31,20 +31,18 @@ module DbTable
     case table
     when :accounts
       record_str = <<~RECORD_STR
-        ID: #{record[:id]}
-        Name: #{record[:name]}
-        Balance: #{Console.format_money(record[:balance].round(2))} #{record[:currency]}
-        Created at: #{Time.at(record[:created_at]).strftime('%d.%m.%Y. %H:%M')}
-        Updated at: #{Time.at(record[:updated_at]).strftime('%d.%m.%Y. %H:%M')}
+        #{record[:name]} (ID #{record[:id]})
+        #{Console.format_money(record[:balance].round(2))} #{record[:currency]}
+        #{Time.at(record[:created_at]).strftime('%d.%m.%Y. %H:%M')} (created)
+        #{Time.at(record[:updated_at]).strftime('%d.%m.%Y. %H:%M')} (updated)
 
       RECORD_STR
     when :payments
       record_str = <<~RECORD_STR
         [#{Time.at(record[:created_at]).strftime('%d.%m.%Y. %H:%M')}] ID: #{record[:id]}
-        From: #{record[:from_account]}
-        To: #{record[:to_account]}
-        Amount: #{Console.format_money(record[:amount].round(2))} #{record[:currency]}
-        Description: #{record[:description]}
+        #{record[:from_account]} -> #{record[:to_account]}
+        #{Console.format_money(record[:amount].round(2))} #{record[:currency]}
+        #{record[:description]}
         
       RECORD_STR
     end

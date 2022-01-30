@@ -43,7 +43,7 @@ rescue StandardError => e
   exit false
 end
 DB.loggers << Logger.new('logs/db.log', 5, 5120)
-DB.loggers << Logger.new(STDOUT)
+# DB.loggers << Logger.new(STDOUT)
 
 CURRENCIES = DB[:currencies].all.map{|c| c[:name]}.freeze
 DEFAULT_PROMPT = 'pay_log> '.freeze
