@@ -3,6 +3,27 @@ module DbTable
     DB[:"v_#{table}"].first(id: record_id)
   end
 
+  def self.get_all(table, opts = {})
+    query = DB[:"v_#{table}"]
+
+    unless opts[:search_word].nil?
+      case table
+      when :accounts
+        query = query.where(Sequel.like(:name, "%#{opts[:search_word]}%"))
+            .or(Sequel.like(:balance, "%#{opts[:search_word]}%"))
+      when :payments
+        query = query.where(Sequel.like(:description, "%#{opts[:search_word]}%"))
+            .or(Sequel.like(:amount, "%#{opts[:search_word]}%"))
+            .or(Sequel.like(:from_account, "%#{opts[:search_word]}%"))
+            .or(Sequel.like(:to_account, "%#{opts[:search_word]}%"))
+      end
+    end
+    
+    query.limit(opts[:limit], opts[:offset])
+        .order(Sequel.desc(:created_at))
+        .all
+  end
+
   def self.record_to_string(table, record)
     record_str = ''
     columns = []

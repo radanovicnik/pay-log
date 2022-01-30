@@ -6,8 +6,6 @@ prompt = DEFAULT_PROMPT
 command = ''
 table = :payments
 record_id = nil
-limit = 5
-offset = 0
 
 loop do
   case mode
@@ -268,7 +266,70 @@ loop do
       end
     end
 
+  # Display records
   when 'list'
+    command = Console.get_input prompt
+    filters = {
+      search_word: '',
+      limit: DEFAULT_PAGE_SIZE,
+      offset: nil
+    }
+    puts Content.mode_list_help
+
+    loop do
+      case command
+      when /^w/
+        name = :search_word
+        tmp = command.scan(/^w\s*(.*)/).flatten[0].to_s.strip
+        if tmp.empty?
+          puts Content.error_invalid_value(name)
+        else
+          filters[name] = tmp
+          puts DbTable.field_to_string(name, filters[name])
+        end
+        next
+      when /^l/
+        name = :limit
+        tmp = Integer(command.scan(/^l\s*(\d*)/).flatten[0].to_s) rescue nil
+        if tmp.nil?
+          puts Content.error_invalid_value(name)
+        else
+          filters[name] = tmp
+          puts DbTable.field_to_string(name, filters[name])
+        end
+        next
+      when /^o/
+        name = :offset
+        tmp = Integer(command.scan(/^o\s*(\d*)/).flatten[0].to_s) rescue nil
+        if tmp.nil?
+          puts Content.error_invalid_value(name)
+        else
+          filters[name] = tmp
+          puts DbTable.field_to_string(name, filters[name])
+        end
+        next
+      when '?'
+        puts Content.mode_delete_help(table)
+        next
+      when ''
+        next
+      when 'q'
+        prompt = DEFAULT_PROMPT
+        break
+      when 's'
+        # Search using given parameters
+        records = DbTable.get_all(table, filters)
+        records.each { |r| puts DbTable.record_to_string(table, r) }
+        next
+      when 'n'
+        # Search next page
+        filters[:offset] = filters[:offset].to_i + filters[:limit]
+        records = DbTable.get_all(table, filters)
+        records.each { |r| puts DbTable.record_to_string(table, r) }
+        next
+      end
+    end
+
   else
     puts Content.error_unknown_mode
     puts Content.exit

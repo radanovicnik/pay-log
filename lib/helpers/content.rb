@@ -1,6 +1,6 @@
 module Content
   def self.help
-    help_message = <<~HELP_MESSAGE
+    help_message = <<~MESSAGE_TEXT
       Program for keeping track of payments and current money amount.
       Available commands:
        'n' - Write new transaction
@@ -9,7 +9,7 @@ module Content
        'q' - Quit program
        '?' - Show this help message
 
-    HELP_MESSAGE
+    MESSAGE_TEXT
     help_message
   end
 
@@ -37,20 +37,20 @@ module Content
     help_message = ''
     case table
     when :accounts
-      help_message << <<~HELP_MESSAGE
+      help_message << <<~MESSAGE_TEXT
         Type first letters to fill out these fields:
           [n]ame, [b]alance, [c]urrency
-      HELP_MESSAGE
+      MESSAGE_TEXT
     when :payments
-      help_message << <<~HELP_MESSAGE
+      help_message << <<~MESSAGE_TEXT
         Type first letters to fill out these fields:
           [f]rom_name, [t]o_name, [d]escription, [a]mount, [c]urrency
-      HELP_MESSAGE
+      MESSAGE_TEXT
     end
-    help_message << <<~HELP_MESSAGE
+    help_message << <<~MESSAGE_TEXT
       Actions:
         [s]ave, [q]uit (back to menu), [?] help
-    HELP_MESSAGE
+    MESSAGE_TEXT
     help_message
   end
 
@@ -58,22 +58,33 @@ module Content
     help_message = ''
     case table
     when :accounts
-      help_message << <<~HELP_MESSAGE
+      help_message << <<~MESSAGE_TEXT
         You are about to delete this account.
         Fill out the name with which to replace it in past payments:
         (Optional - if not filled, will be replaced by "#{DEFAULT_UNKNOWN_ACCOUNT}")
           [n]ame
-      HELP_MESSAGE
+      MESSAGE_TEXT
     when :payments
-      help_message << <<~HELP_MESSAGE
+      help_message << <<~MESSAGE_TEXT
         You are about to delete this payment record.
         Money will be returned to respective accounts.
-      HELP_MESSAGE
+      MESSAGE_TEXT
     end
-    help_message << <<~HELP_MESSAGE
+    help_message << <<~MESSAGE_TEXT
       Actions:
         [s]tart (deletion), [q]uit (back to menu), [?] help
-    HELP_MESSAGE
+    MESSAGE_TEXT
+    help_message
+  end
+
+  def self.mode_list_help
+    help_message = <<~MESSAGE_TEXT
+      Listing records from database...
+      Type first letters to fill out search filters:
+        [w]ord (for searching), [l]imit, [o]ffset
+      Actions:
+        [s]earch, [q]uit (back to menu), [?] help
+    MESSAGE_TEXT
     help_message
   end
 end

@@ -12,8 +12,9 @@ require 'bigdecimal/util'
 require 'pp'
 
 
+config_tmp = {}
 begin
-  CONFIG = YAML.load_file 'config/default.yml'
+  config_tmp = YAML.load_file 'config/default.yml'
 rescue StandardError => e
   STDERR.puts "Default configuration file missing (config/default.yml)!\n#{e.full_message}"
   exit false
@@ -21,11 +22,12 @@ end
 
 if File.exist? 'config/custom.yml'
   begin
-    CONFIG = CONFIG.deep_merge 'config/custom.yml'
+    config_tmp = config_tmp.deep_merge 'config/custom.yml'
   rescue StandardError => e
     STDERR.puts 'Unable to read custom config file (config/custom.yml).'
   end
 end
+CONFIG = config_tmp
 
 begin
   DB = Sequel.sqlite(
@@ -44,3 +46,4 @@ DB.loggers << Logger.new(STDOUT)
 CURRENCIES = DB[:currencies].all.map{|c| c[:name]}.freeze
 DEFAULT_PROMPT = 'pay_log> '.freeze
 DEFAULT_UNKNOWN_ACCOUNT = 'other'.freeze
+DEFAULT_PAGE_SIZE = 5
