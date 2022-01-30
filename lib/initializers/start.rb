@@ -4,29 +4,13 @@ require 'yaml'
 require 'sequel'
 require 'sqlite3'
 require 'require_all'
+require 'deep_merge'
 require 'logger'
 require 'readline'
 require 'bigdecimal'
 require 'bigdecimal/util'
 require 'pp'
 
-# Create deep_merge for hash
-class ::Hash
-  def deep_merge(second)
-    merger = proc do |_, v1, v2|
-      if Hash === v1 && Hash === v2
-        v1.merge(v2, &merger)
-      elsif Array === v1 && Array === v2
-        v1.union v2
-      elsif [:undefined, nil, :nil].include? v2
-        v1
-      else
-        v2
-      end
-    end
-    merge(second.to_h, &merger)
-  end
-end
 
 begin
   CONFIG = YAML.load_file 'config/default.yml'
