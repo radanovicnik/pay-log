@@ -22,7 +22,7 @@ end
 
 if File.exist? 'config/custom.yml'
   begin
-    config_tmp = config_tmp.deep_merge 'config/custom.yml'
+    config_tmp = config_tmp.deep_merge(YAML.load_file('config/custom.yml'))
   rescue StandardError => e
     STDERR.puts 'Unable to read custom config file (config/custom.yml).'
   end
