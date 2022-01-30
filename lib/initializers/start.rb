@@ -10,11 +10,37 @@ require 'bigdecimal'
 require 'bigdecimal/util'
 require 'pp'
 
+# Create deep_merge for hash
+class ::Hash
+  def deep_merge(second)
+    merger = proc do |_, v1, v2|
+      if Hash === v1 && Hash === v2
+        v1.merge(v2, &merger)
+      elsif Array === v1 && Array === v2
+        v1.union v2
+      elsif [:undefined, nil, :nil].include? v2
+        v1
+      else
+        v2
+      end
+    end
+    merge(second.to_h, &merger)
+  end
+end
+
 begin
-  CONFIG = YAML.load_file('config.yml')
-rescue Exception => e
-  STDERR.puts "Config file missing (config.yml)!\n#{e.full_message}"
+  CONFIG = YAML.load_file 'config/default.yml'
+rescue StandardError => e
+  STDERR.puts "Default configuration file missing (config/default.yml)!\n#{e.full_message}"
   exit false
+end
+
+if File.exist? 'config/custom.yml'
+  begin
+    CONFIG = CONFIG.deep_merge 'config/custom.yml'
+  rescue StandardError => e
+    STDERR.puts 'Unable to read custom config file (config/custom.yml).'
+  end
 end
 
 begin
@@ -24,7 +50,7 @@ begin
     foreign_keys: CONFIG[:database][:foreign_keys],
     case_sensitive_like: CONFIG[:database][:case_sensitive_like]
   )
-rescue Exception => e
+rescue StandardError => e
   STDERR.puts "Couldn't connect to database!\n#{e.full_message}"
   exit false
 end
