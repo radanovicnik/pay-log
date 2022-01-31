@@ -88,6 +88,7 @@ module DbTable
         balance: 0,
         currency_id: currency_id
       )
+      $db_stats[:modified] = true
     end
     return id
   end
@@ -102,6 +103,7 @@ module DbTable
       balance: account_balance,
       updated_at: Time.now.to_i
     )
+    $db_stats[:modified] = true
   end
 
   def self.insert(table, record)
@@ -159,6 +161,7 @@ module DbTable
       end
     end
 
+    $db_stats[:modified] = true
     new_record_id
   end
 
@@ -246,10 +249,12 @@ module DbTable
       end
     end
 
+    $db_stats[:modified] = true
     return updated_count
   end
 
   def self.delete(table, id, replacement_account = nil)
+    deleted_count = 0
     record = DB[table].first(id: id)
     if record.nil?
       raise ArgumentError.new("No record in table \"#{table}\" with id = #{id.inspect}")
@@ -284,7 +289,7 @@ module DbTable
             :updated_at => Time.now.to_i
           )
         end
-        DB[:accounts].where(id: id).delete
+        deleted_count = DB[:accounts].where(id: id).delete
         update_account_balance(new_account_id)
       end
 
@@ -298,8 +303,11 @@ module DbTable
           balance: Sequel[:balance] - record[:amount],
           updated_at: Time.now.to_i
         )
-        DB[:payments].where(id: id).delete
+        deleted_count = DB[:payments].where(id: id).delete
       end
     end
+
+    $db_stats[:modified] = true
+    deleted_count
   end
 end

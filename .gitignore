@@ -1,6 +1,7 @@
 # directories
 /tmp/
 /logs/
+/db/data/
 
 # files
 /Gemfile.lock
@@ -8,4 +9,3 @@
 /tmp.rb
 /test.rb
 /config/custom.yml
-/db/data/pay_log.db
