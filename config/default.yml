@@ -1,5 +1,6 @@
 :database:
-  :path: ./pay_log.db
+  :dir: 'db/data'
+  :file: pay_log.db
   :readonly: false
   :foreign_keys: true
   :case_sensitive_like: false

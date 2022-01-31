@@ -29,11 +29,13 @@ if File.exist? 'config/custom.yml'
 end
 CONFIG = config_tmp
 
-Dir.mkdir('logs') unless File.exist?('logs')
+%w(logs db/data).each do |dir|
+  Dir.mkdir(dir) unless File.exist?(dir)
+end
 
 begin
   DB = Sequel.sqlite(
-    CONFIG[:database][:path],
+    File.join(CONFIG[:database][:dir], CONFIG[:database][:file]),
     readonly: CONFIG[:database][:readonly],
     foreign_keys: CONFIG[:database][:foreign_keys],
     case_sensitive_like: CONFIG[:database][:case_sensitive_like]
