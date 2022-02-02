@@ -16,3 +16,6 @@
 
 # number of records shown in one take, when listing
 :list_page_size: 5
+
+# maximum number of suggested items, with vague queries
+:max_choices: 5

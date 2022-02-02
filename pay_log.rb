@@ -129,23 +129,40 @@ loop do
         end
       when :payments
         case command
-        when /^f/
-          field = :from_name
-          tmp = command.scan(/^f\s*(.*)/).flatten[0].to_s.strip
+        when /^[ft]/
+          field = command.match?(/^f/) ? :from_name : :to_name
+          tmp = command.scan(/^#{field[0]}\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
             puts Content.error_invalid_value(field)
           else
-            record[field] = tmp
-            puts DbTable.field_to_string(field, record[field])
-          end
-          next
-        when /^t/
-          field = :to_name
-          tmp = command.scan(/^t\s*(.*)/).flatten[0].to_s.strip
-          if tmp.empty?
-            puts Content.error_invalid_value(field)
-          else
-            record[field] = tmp
+            matching_accounts = DbTable.get_all(:accounts, search_word: tmp)
+
+            if matching_accounts.size == 0
+              record[field] = tmp
+
+            elsif matching_accounts.size == 1
+              record[field] = matching_accounts[0][:name]
+
+            elsif matching_accounts.size <= MAX_CHOICES
+              puts 'Matching accounts:'
+              matching_accounts.each_with_index { |a, i| puts("  [#{i+1}] #{a[:name]} (ID: #{a[:id]})") }
+              puts
+              print 'Pick one (by typing the number in []) '
+              command = gets.strip
+
+              account_pick = Integer(command) rescue nil
+              if account_pick.nil? || account_pick < 1 || account_pick > matching_accounts.size
+                puts 'Invalid input. No account picked.'
+                next
+              else
+                record[field] = matching_accounts[account_pick - 1][:name]
+              end
+
+            else
+              puts 'Too many accounts matching. Try to be more specific.'
+              next
+              
+            end
             puts DbTable.field_to_string(field, record[field])
           end
           next

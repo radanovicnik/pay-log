@@ -10,10 +10,10 @@ module DbTable
       case table
       when :accounts
         query = query.where(Sequel.like(:name, "%#{opts[:search_word]}%"))
-            .or(Sequel.like(:balance, "%#{opts[:search_word]}%"))
+            .or(Sequel.like(:balance, "#{opts[:search_word]}"))
       when :payments
         query = query.where(Sequel.like(:description, "%#{opts[:search_word]}%"))
-            .or(Sequel.like(:amount, "%#{opts[:search_word]}%"))
+            .or(Sequel.like(:amount, "#{opts[:search_word]}"))
             .or(Sequel.like(:from_account, "%#{opts[:search_word]}%"))
             .or(Sequel.like(:to_account, "%#{opts[:search_word]}%"))
       end
