@@ -1,5 +1,5 @@
-require_relative 'lib/initializers/start'
-require_all 'lib/helpers'
+require_relative 'lib/scripts/start'
+require_all 'lib/classes'
 
 require 'irb'
 ARGV.clear
@@ -9,4 +9,4 @@ ARGV.clear
 ################
 binding.irb
 
-require_relative 'lib/initializers/end'
+require_relative 'lib/scripts/end'
