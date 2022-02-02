@@ -56,10 +56,14 @@ rescue StandardError => e
   STDERR.puts "Couldn't connect to database!\n#{e.full_message}"
   exit false
 end
-DB.loggers << Logger.new('logs/db.log', 5, 5120)
-# DB.loggers << Logger.new(STDOUT)
+DB.loggers << Logger.new(
+  CONFIG[:db_log][:path],
+  CONFIG[:db_log][:files_count],
+  CONFIG[:db_log][:file_size]
+)
+DB.loggers << Logger.new(STDOUT) if CONFIG[:db_log][:log_to_stdout]
 
 CURRENCIES = DB[:currencies].all.map{|c| c[:name]}.freeze
 DEFAULT_PROMPT = 'pay_log> '.freeze
 DEFAULT_UNKNOWN_ACCOUNT = 'other'.freeze
-DEFAULT_PAGE_SIZE = 5
+DEFAULT_PAGE_SIZE = CONFIG[:list_page_size]

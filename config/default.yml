@@ -1,6 +1,18 @@
 :database:
   :dir: 'db/data'
-  :file: pay_log.db
+  :file: 'pay_log.db'
   :readonly: false
   :foreign_keys: true
   :case_sensitive_like: false
+
+:db_log:
+  :path: 'logs/db.log'
+  # how many last files to keep
+  :files_count: 5
+  # max file size in bytes
+  :file_size: 5120
+  # enable logging to stdout?
+  :log_to_stdout: false
+
+# number of records shown in one take, when listing
+:list_page_size: 5
