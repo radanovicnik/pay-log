@@ -88,7 +88,7 @@ module DbTable
         balance: 0,
         currency_id: currency_id
       )
-      $db_stats[:modified] = true
+      $db_modified = true
     end
     return id
   end
@@ -103,7 +103,7 @@ module DbTable
       balance: account_balance,
       updated_at: Time.now.to_i
     )
-    $db_stats[:modified] = true
+    $db_modified = true
   end
 
   def self.insert(table, record)
@@ -161,7 +161,7 @@ module DbTable
       end
     end
 
-    $db_stats[:modified] = true
+    $db_modified = true
     new_record_id
   end
 
@@ -249,7 +249,7 @@ module DbTable
       end
     end
 
-    $db_stats[:modified] = true
+    $db_modified = true
     return updated_count
   end
 
@@ -307,7 +307,7 @@ module DbTable
       end
     end
 
-    $db_stats[:modified] = true
+    $db_modified = true
     deleted_count
   end
 end

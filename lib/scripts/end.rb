@@ -1,9 +1,8 @@
 # Finishing program
 
-File.write(
-  File.join(CONFIG[:database][:dir], 'db_stats.json'),
-  JSON.pretty_generate($db_stats)
-)
-
-DB.run('VACUUM') if $db_stats[:modified]
+DB.run('VACUUM') if $db_modified
 DB.disconnect
+
+if CONFIG[:on_android]
+  `am broadcast --user 0 -a com.termux.PAY-LOG_FINISHED --ez modified #{$db_modified}`
+end

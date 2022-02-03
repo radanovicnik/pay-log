@@ -9,7 +9,6 @@ require 'logger'
 require 'readline'
 require 'bigdecimal'
 require 'bigdecimal/util'
-require 'json'
 require 'fileutils'
 require 'pp'
 
@@ -35,15 +34,7 @@ CONFIG = config_tmp
   FileUtils.mkdir_p(dir) unless File.exist?(dir)
 end
 
-db_stats_file = File.join(CONFIG[:database][:dir], 'db_stats.json')
-$db_stats = {modified: false}
-if File.exist? db_stats_file
-  $db_stats = JSON.parse(File.read(db_stats_file), symbolize_names: true)
-else
-  File.write(db_stats_file, JSON.pretty_generate($db_stats))
-end
-
-$db_stats[:modified] = false
+$db_modified = false
 
 begin
   DB = Sequel.sqlite(
