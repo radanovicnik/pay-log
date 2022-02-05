@@ -6,7 +6,7 @@ module DbTable
   def self.get_all(table, opts = {})
     query = DB[:"v_#{table}"]
 
-    unless opts[:search_word].nil?
+    unless opts[:search_word].to_s.empty?
       case table
       when :accounts
         query = query.where(Sequel.like(:name, "%#{opts[:search_word]}%"))
@@ -257,7 +257,7 @@ module DbTable
     deleted_count = 0
     record = DB[table].first(id: id)
     if record.nil?
-      raise ArgumentError.new("No record in table \"#{table}\" with id = #{id.inspect}")
+      raise ArgumentError.new(Content.error_record_missing(table, id))
       return nil
     end
 

@@ -30,7 +30,7 @@ if File.exist? 'config/custom.yml'
 end
 CONFIG = config_tmp
 
-%w(logs db/data).each do |dir|
+%w(logs db/data db/backups).each do |dir|
   FileUtils.mkdir_p(dir) unless File.exist?(dir)
 end
 
@@ -54,6 +54,7 @@ DB.loggers << Logger.new(
 )
 DB.loggers << Logger.new(STDOUT) if CONFIG[:db_log][:log_to_stdout]
 
+START_TIME = Time.now.freeze
 CURRENCIES = DB[:currencies].all.map{|c| c[:name]}.freeze
 DEFAULT_PROMPT = 'pay_log> '.freeze
 DEFAULT_UNKNOWN_ACCOUNT = 'other'.freeze

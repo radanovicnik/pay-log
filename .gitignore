@@ -2,6 +2,7 @@
 /tmp/
 /logs/
 /db/data/
+/db/backups/
 
 # files
 /Gemfile.lock

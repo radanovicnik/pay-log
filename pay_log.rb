@@ -85,7 +85,6 @@ loop do
   when :edit
     record = {}
     old_record = {}
-    puts
     if record_id.nil?
       case table
       when :accounts
@@ -93,8 +92,16 @@ loop do
       when :payments
         record = %i(from_name to_name description amount currency).map{|x| [x, nil]}.to_h
       end
+      puts
     else
       old_record = DbTable.get_by_id(table, record_id)
+      if old_record.nil?
+        puts Content.error_record_missing(table, record_id)
+        mode = :menu
+        prompt = DEFAULT_PROMPT
+        next
+      end
+      puts
       puts DbTable.record_to_string(table, old_record)
     end
     puts Content.mode_edit_help(table)
@@ -211,14 +218,16 @@ loop do
         break
       when 's'
         # Save changes
+        new_record_id = nil
         begin
           if record_id.nil?
-            DbTable.insert(table, record)
+            new_record_id = DbTable.insert(table, record)
           else
             DbTable.update(table, record_id, record)
+            new_record_id = record_id
           end
           puts "\nRecord saved!\n\n"
-          puts DbTable.record_to_string(table, record)
+          puts DbTable.record_to_string(table, DbTable.get_by_id(table, new_record_id))
         rescue ArgumentError => e
           puts e.message
         end
@@ -233,6 +242,12 @@ loop do
   when :delete
     replacement_account = nil
     old_record = DbTable.get_by_id(table, record_id)
+    if old_record.nil?
+      puts Content.error_record_missing(table, record_id)
+      mode = :menu
+      prompt = DEFAULT_PROMPT
+      next
+    end
     puts
     puts DbTable.record_to_string(table, old_record)
     puts Content.mode_delete_help(table)
@@ -277,8 +292,9 @@ loop do
             puts e.message
           else
             puts "Record deleted.\n\n"
-            prompt = DEFAULT_PROMPT
           ensure
+            mode = :menu
+            prompt = DEFAULT_PROMPT
             break
           end
         else
@@ -294,7 +310,7 @@ loop do
   # Display records
   when :list
     filters = {
-      search_word: '',
+      search_word: nil,
       limit: DEFAULT_PAGE_SIZE,
       offset: nil
     }

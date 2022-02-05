@@ -20,5 +20,8 @@
 # maximum number of suggested items, with vague queries
 :max_choices: 5
 
+# maximum number of database backups
+:max_db_backups: 5
+
 # running on Android?
 :on_android: false

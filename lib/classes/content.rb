@@ -32,15 +32,15 @@ module Content
   end
 
   def self.exit
-    exit_message = <<~EXIT_MESSAGE
-      Exiting...
-
-    EXIT_MESSAGE
-    exit_message
+    if $db_modified
+      "Saving changes...\n\n"
+    else
+      "Exiting...\n\n"
+    end
   end
 
   def self.error_unknown_command
-    "Unkown command. Type '?' to see what's available."
+    "Unknown command. Type '?' to see what's available."
   end
 
   def self.error_unknown_mode
@@ -49,6 +49,10 @@ module Content
 
   def self.error_invalid_value(arg)
     "Invalid value for \"#{arg}\". Please check your input."
+  end
+
+  def self.error_record_missing(table, record_id)
+    "No record in table \"#{table}\" with ID = #{record_id.inspect}"
   end
 
   def self.mode_edit_help(table)
