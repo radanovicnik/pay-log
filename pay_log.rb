@@ -9,7 +9,7 @@ command = ''
 table = :payments
 record_id = nil
 
-puts Content.title
+puts PayLog::Content.title
 
 loop do
   case mode
@@ -17,16 +17,16 @@ loop do
   # Main menu
   when :menu
     record_id = nil
-    command = Console.get_input prompt
+    command = PayLog::Console.get_input prompt
 
     # Main menu: general commands, pick table
     case command
     when 'q'
-      puts Content.exit
+      puts PayLog::Content.exit
       break
     when '?'
       puts
-      puts Content.help
+      puts PayLog::Content.help
       next
     when ''
       next
@@ -35,7 +35,7 @@ loop do
     when /^p/
       table = :payments
     else
-      puts Content.error_unknown_command
+      puts PayLog::Content.error_unknown_command
       next
     end
 
@@ -61,7 +61,7 @@ loop do
 
       record_id = Integer(command) rescue nil
       if command.empty? || record_id.nil?
-        puts Content.error_unknown_command
+        puts PayLog::Content.error_unknown_command
         next
       else
         mode = :delete
@@ -77,7 +77,7 @@ loop do
 
     # Main menu - table: -
     else
-      puts Content.error_unknown_command
+      puts PayLog::Content.error_unknown_command
       next
     end
 
@@ -94,21 +94,21 @@ loop do
       end
       puts
     else
-      old_record = DbTable.get_by_id(table, record_id)
+      old_record = PayLog::DbTable.get_by_id(table, record_id)
       if old_record.nil?
-        puts Content.error_record_missing(table, record_id)
+        puts PayLog::Content.error_record_missing(table, record_id)
         mode = :menu
         prompt = DEFAULT_PROMPT
         next
       end
       puts
-      puts DbTable.record_to_string(table, old_record)
+      puts PayLog::DbTable.record_to_string(table, old_record)
     end
-    puts Content.mode_edit_help(table)
+    puts PayLog::Content.mode_edit_help(table)
 
     loop do
       field = nil
-      command = Console.get_input prompt
+      command = PayLog::Console.get_input prompt
 
       case table
       when :accounts
@@ -117,20 +117,20 @@ loop do
           field = :name
           tmp = command.scan(/^n\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
-            puts Content.error_invalid_value(field)
+            puts PayLog::Content.error_invalid_value(field)
           else
             record[field] = tmp
-            puts DbTable.field_to_string(field, record[field])
+            puts PayLog::DbTable.field_to_string(field, record[field])
           end
           next
         when /^b/
           field = :balance
           tmp = BigDecimal(command.scan(/^b\s*(.*)/).flatten[0].to_s) rescue nil
           if tmp.nil?
-            puts Content.error_invalid_value(field)
+            puts PayLog::Content.error_invalid_value(field)
           else
             record[field] = tmp
-            puts DbTable.field_to_string(field, record[field])
+            puts PayLog::DbTable.field_to_string(field, record[field])
           end
           next
         end
@@ -140,9 +140,9 @@ loop do
           field = command.match?(/^f/) ? :from_name : :to_name
           tmp = command.scan(/^#{field[0]}\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
-            puts Content.error_invalid_value(field)
+            puts PayLog::Content.error_invalid_value(field)
           else
-            matching_accounts = DbTable.get_all(:accounts, search_word: tmp)
+            matching_accounts = PayLog::DbTable.get_all(:accounts, search_word: tmp)
 
             if matching_accounts.size == 0
               record[field] = tmp
@@ -170,27 +170,27 @@ loop do
               next
               
             end
-            puts DbTable.field_to_string(field, record[field])
+            puts PayLog::DbTable.field_to_string(field, record[field])
           end
           next
         when /^d/
           field = :description
           tmp = command.scan(/^d\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
-            puts Content.error_invalid_value(field)
+            puts PayLog::Content.error_invalid_value(field)
           else
             record[field] = tmp
-            puts DbTable.field_to_string(field, record[field])
+            puts PayLog::DbTable.field_to_string(field, record[field])
           end
           next
         when /^a/
           field = :amount
           tmp = BigDecimal(command.scan(/^a\s*(.*)/).flatten[0].to_s) rescue nil
           if tmp.nil?
-            puts Content.error_invalid_value(field)
+            puts PayLog::Content.error_invalid_value(field)
           else
             record[field] = tmp
-            puts DbTable.field_to_string(field, record[field])
+            puts PayLog::DbTable.field_to_string(field, record[field])
           end
           next
         end
@@ -201,14 +201,14 @@ loop do
         field = :currency
         tmp = command.scan(/^c\s*(.*)/).flatten[0].to_s.strip.upcase
         if tmp.empty? || !CURRENCIES.include?(tmp)
-          puts Content.error_invalid_value(field)
+          puts PayLog::Content.error_invalid_value(field)
         else
           record[field] = tmp
-          puts DbTable.field_to_string(field, record[field])
+          puts PayLog::DbTable.field_to_string(field, record[field])
         end
         next
       when '?'
-        puts Content.mode_edit_help(table)
+        puts PayLog::Content.mode_edit_help(table)
         next
       when ''
         next
@@ -221,19 +221,19 @@ loop do
         new_record_id = nil
         begin
           if record_id.nil?
-            new_record_id = DbTable.insert(table, record)
+            new_record_id = PayLog::DbTable.insert(table, record)
           else
-            DbTable.update(table, record_id, record)
+            PayLog::DbTable.update(table, record_id, record)
             new_record_id = record_id
           end
           puts "\nRecord saved!\n\n"
-          puts DbTable.record_to_string(table, DbTable.get_by_id(table, new_record_id))
+          puts PayLog::DbTable.record_to_string(table, PayLog::DbTable.get_by_id(table, new_record_id))
         rescue ArgumentError => e
           puts e.message
         end
         next
       else
-        puts Content.error_unknown_command
+        puts PayLog::Content.error_unknown_command
         next
       end
     end
@@ -241,19 +241,19 @@ loop do
   # Delete record
   when :delete
     replacement_account = nil
-    old_record = DbTable.get_by_id(table, record_id)
+    old_record = PayLog::DbTable.get_by_id(table, record_id)
     if old_record.nil?
-      puts Content.error_record_missing(table, record_id)
+      puts PayLog::Content.error_record_missing(table, record_id)
       mode = :menu
       prompt = DEFAULT_PROMPT
       next
     end
     puts
-    puts DbTable.record_to_string(table, old_record)
-    puts Content.mode_delete_help(table)
+    puts PayLog::DbTable.record_to_string(table, old_record)
+    puts PayLog::Content.mode_delete_help(table)
 
     loop do
-      command = Console.get_input prompt
+      command = PayLog::Console.get_input prompt
 
       case table
       when :accounts
@@ -261,10 +261,10 @@ loop do
         when /^n/
           tmp = command.scan(/^n\s*(.*)/).flatten[0].to_s.strip
           if tmp.empty?
-            puts Content.error_invalid_value(:name)
+            puts PayLog::Content.error_invalid_value(:name)
           else
             replacement_account = tmp
-            puts DbTable.field_to_string(:name, replacement_account)
+            puts PayLog::DbTable.field_to_string(:name, replacement_account)
           end
           next
         end
@@ -272,7 +272,7 @@ loop do
 
       case command
       when '?'
-        puts Content.mode_delete_help(table)
+        puts PayLog::Content.mode_delete_help(table)
         next
       when ''
         next
@@ -287,7 +287,7 @@ loop do
 
         if command == 'y'
           begin
-            DbTable.delete(table, record_id, replacement_account)
+            PayLog::DbTable.delete(table, record_id, replacement_account)
           rescue ArgumentError => e
             puts e.message
           else
@@ -302,7 +302,7 @@ loop do
         end
         next
       else
-        puts Content.error_unknown_command
+        puts PayLog::Content.error_unknown_command
         next
       end
     end
@@ -315,44 +315,44 @@ loop do
       offset: nil
     }
     puts
-    puts Content.mode_list_help
+    puts PayLog::Content.mode_list_help
 
     loop do
-      command = Console.get_input prompt
+      command = PayLog::Console.get_input prompt
 
       case command
       when /^w/
         name = :search_word
         tmp = command.scan(/^w\s*(.*)/).flatten[0].to_s.strip
         if tmp.empty?
-          puts Content.error_invalid_value(name)
+          puts PayLog::Content.error_invalid_value(name)
         else
           filters[name] = tmp
-          puts DbTable.field_to_string(name, filters[name])
+          puts PayLog::DbTable.field_to_string(name, filters[name])
         end
         next
       when /^l/
         name = :limit
         tmp = Integer(command.scan(/^l\s*(\d*)/).flatten[0].to_s) rescue nil
         if tmp.nil?
-          puts Content.error_invalid_value(name)
+          puts PayLog::Content.error_invalid_value(name)
         else
           filters[name] = tmp
-          puts DbTable.field_to_string(name, filters[name])
+          puts PayLog::DbTable.field_to_string(name, filters[name])
         end
         next
       when /^o/
         name = :offset
         tmp = Integer(command.scan(/^o\s*(\d*)/).flatten[0].to_s) rescue nil
         if tmp.nil?
-          puts Content.error_invalid_value(name)
+          puts PayLog::Content.error_invalid_value(name)
         else
           filters[name] = tmp
-          puts DbTable.field_to_string(name, filters[name])
+          puts PayLog::DbTable.field_to_string(name, filters[name])
         end
         next
       when '?'
-        puts Content.mode_delete_help(table)
+        puts PayLog::Content.mode_delete_help(table)
         next
       when ''
         next
@@ -362,26 +362,26 @@ loop do
         break
       when 's'
         # Search using given parameters
-        records = DbTable.get_all(table, filters)
+        records = PayLog::DbTable.get_all(table, filters)
         puts
-        records.each { |r| puts DbTable.record_to_string(table, r) }
+        records.each { |r| puts PayLog::DbTable.record_to_string(table, r) }
         next
       when 'n'
         # Search next page
         filters[:offset] = filters[:offset].to_i + filters[:limit]
-        records = DbTable.get_all(table, filters)
+        records = PayLog::DbTable.get_all(table, filters)
         puts
-        records.each { |r| puts DbTable.record_to_string(table, r) }
+        records.each { |r| puts PayLog::DbTable.record_to_string(table, r) }
         next
       else
-        puts Content.error_unknown_command
+        puts PayLog::Content.error_unknown_command
         next
       end
     end
 
   else
-    puts Content.error_unknown_mode
-    puts Content.exit
+    puts PayLog::Content.error_unknown_mode
+    puts PayLog::Content.exit
     break
   end
   
