@@ -10,7 +10,7 @@
   # how many last files to keep
   :files_count: 5
   # max file size in bytes
-  :file_size: 5120
+  :file_size: 1048576  # =1MB
   # enable logging to stdout?
   :log_to_stdout: false
 
