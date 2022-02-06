@@ -143,26 +143,28 @@ loop do
             puts PayLog::Content.error_invalid_value(field)
           else
             matching_accounts = PayLog::DbTable.get_all(:accounts, search_word: tmp)
+            matching_accounts = matching_accounts.map{|a| a[:name]}.uniq
+            matching_count = matching_accounts.size
 
-            if matching_accounts.size == 0
+            if matching_count == 0
               record[field] = tmp
 
-            elsif matching_accounts.size == 1
-              record[field] = matching_accounts[0][:name]
+            elsif matching_count == 1
+              record[field] = matching_accounts[0]
 
-            elsif matching_accounts.size <= MAX_CHOICES
+            elsif matching_count <= MAX_CHOICES
               puts 'Matching accounts:'
-              matching_accounts.each_with_index { |a, i| puts("  [#{i+1}] #{a[:name]} (ID: #{a[:id]})") }
+              matching_accounts.each_with_index { |a, i| puts("  [#{i+1}] #{a}") }
               puts
               print 'Pick one (by typing the number in []) '
               command = gets.strip
 
               account_pick = Integer(command) rescue nil
-              if account_pick.nil? || account_pick < 1 || account_pick > matching_accounts.size
+              if account_pick.nil? || account_pick < 1 || account_pick > matching_count
                 puts 'Invalid input. No account picked.'
                 next
               else
-                record[field] = matching_accounts[account_pick - 1][:name]
+                record[field] = matching_accounts[account_pick - 1]
               end
 
             else
