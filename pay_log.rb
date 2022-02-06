@@ -368,6 +368,7 @@ loop do
         break
       when 's'
         # Search using given parameters
+        filters[:offset] = nil
         records = PayLog::DbTable.get_all(table, filters)
         puts
         records.each { |r| puts PayLog::DbTable.record_to_string(table, r) }
