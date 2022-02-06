@@ -15,7 +15,14 @@ module PayLog
       group_sep = opts[:group_sep] || '.'
 
       l, r = format('%.2f', amount).split('.')
-      l.reverse.split('').each_slice(3).to_a.map(&:join).join(group_sep).reverse + decimal_sep + r
+
+      sgn = ''
+      if l[0] == '-'
+        l = l[1..]
+        sgn = '-'
+      end
+
+      sgn + l.reverse.split('').each_slice(3).to_a.map(&:join).join(group_sep).reverse + decimal_sep + r
     end
   end
 end
