@@ -228,10 +228,14 @@ loop do
             PayLog::DbTable.update(table, record_id, record)
             new_record_id = record_id
           end
-          puts "\nRecord saved!\n\n"
-          puts PayLog::DbTable.record_to_string(table, PayLog::DbTable.get_by_id(table, new_record_id))
         rescue ArgumentError => e
           puts e.message
+        else
+          puts "\nRecord saved!\n\n"
+          puts PayLog::DbTable.record_to_string(table, PayLog::DbTable.get_by_id(table, new_record_id))
+          mode = :menu
+          prompt = DEFAULT_PROMPT
+          break
         end
         next
       else

@@ -76,7 +76,7 @@ module PayLog
           .where(currency_id: currency_id)
           .first
       unless check_record.nil?
-        raise ArgumentError.new('Account already exists!')
+        raise ArgumentError.new("Account \"#{name}\" already exists! (ID: #{check_record[:id]})")
       end
       return nil
     end
