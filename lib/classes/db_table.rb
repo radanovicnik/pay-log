@@ -235,14 +235,26 @@ module PayLog
             end
           end
           
-          unless new_data[:amount].nil?
-            amount_diff = new_data[:amount] - old_record[:amount]
-            DB[:accounts].where(id: new_data[:from_account_id] || old_record[:from_account_id]).update(
-              balance: Sequel[:balance] - amount_diff,
+          if new_data.slice(:from_account_id, :to_account_id, :amount).any? { |_, v| !v.nil? }
+            DB[:accounts].where(id: old_record[:from_account_id]).update(
+              balance: Sequel[:balance] + old_record[:amount],
               updated_at: Time.now.to_i
             )
-            DB[:accounts].where(id: new_data[:to_account_id] || old_record[:to_account_id]).update(
-              balance: Sequel[:balance] + amount_diff,
+            DB[:accounts].where(id: old_record[:to_account_id]).update(
+              balance: Sequel[:balance] - old_record[:amount],
+              updated_at: Time.now.to_i
+            )
+
+            new_from_id = new_data[:from_account_id] || old_record[:from_account_id]
+            new_to_id = new_data[:to_account_id] || old_record[:to_account_id]
+            new_amount = new_data[:amount] || old_record[:amount]
+
+            DB[:accounts].where(id: new_from_id).update(
+              balance: Sequel[:balance] - new_amount,
+              updated_at: Time.now.to_i
+            )
+            DB[:accounts].where(id: new_to_id).update(
+              balance: Sequel[:balance] + new_amount,
               updated_at: Time.now.to_i
             )
           end
