@@ -35,9 +35,10 @@ module PayLog
       return '' if record.to_h.empty?
       case table
       when :accounts
+        balance_str = Console.format_money(record[:balance].round(2)) + ' ' + record[:currency]
         record_str = <<~RECORD_STR
-          #{record[:name]} (ID #{record[:id]})
-          #{Console.format_money(record[:balance].round(2))} #{record[:currency]}
+          #{record[:name].bold} (ID #{record[:id]})
+          #{record[:balance] >= 0.to_d ? balance_str.green.bold : balance_str.red.bold}
           #{Time.at(record[:created_at]).strftime('%d.%m.%Y. %H:%M')} (created)
           #{Time.at(record[:updated_at]).strftime('%d.%m.%Y. %H:%M')} (updated)
 
@@ -45,8 +46,8 @@ module PayLog
       when :payments
         record_str = <<~RECORD_STR
           [#{Time.at(record[:created_at]).strftime('%d.%m.%Y. %H:%M')}] ID: #{record[:id]}
-          #{record[:from_account]} -> #{record[:to_account]}
-          #{Console.format_money(record[:amount].round(2))} #{record[:currency]}
+          #{record[:from_account].red.bold} #{'->'.bold} #{record[:to_account].green.bold}
+          #{(Console.format_money(record[:amount].round(2)) + ' ' + record[:currency]).bold}
           #{record[:description]}
           
         RECORD_STR
