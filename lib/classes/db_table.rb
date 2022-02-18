@@ -231,7 +231,7 @@ module PayLog
             if !account_name.nil? && !currency_id.nil?
               account_id = find_or_create_account(account_name, currency_id)
             end
-            unless account_id == old_record[:"#{prefix}_account_id"]
+            if !account_id.nil? && account_id != old_record[:"#{prefix}_account_id"]
               new_data[:"#{prefix}_account_id"] = account_id
             end
           end
