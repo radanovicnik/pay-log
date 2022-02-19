@@ -60,7 +60,7 @@ module PayLog
         value = Console.format_money(value)
       end
 
-      "#{name.to_s.gsub('_', ' ').capitalize}: #{value}"
+      "#{name.to_s.gsub('_', ' ').capitalize.blue.bold}#{':'.bold} #{value.green.bold}"
     end
 
     def self.check_empty_fields(record, fields)
