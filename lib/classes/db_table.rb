@@ -37,7 +37,7 @@ module PayLog
       when :accounts
         balance_str = Console.format_money(record[:balance].round(2)) + ' ' + record[:currency]
         record_str = <<~RECORD_STR
-          #{record[:name].bold} (ID #{record[:id]})
+          #{record[:name].to_s.bold} (ID #{record[:id]})
           #{record[:balance] >= 0.to_d ? balance_str.green.bold : balance_str.red.bold}
           #{Time.at(record[:created_at]).strftime('%d.%m.%Y. %H:%M')} (created)
           #{Time.at(record[:updated_at]).strftime('%d.%m.%Y. %H:%M')} (updated)
@@ -46,7 +46,7 @@ module PayLog
       when :payments
         record_str = <<~RECORD_STR
           [#{Time.at(record[:created_at]).strftime('%d.%m.%Y. %H:%M')}] ID: #{record[:id]}
-          #{record[:from_account].red.bold} #{'->'.bold} #{record[:to_account].green.bold}
+          #{record[:from_account].to_s.red.bold} #{'->'.bold} #{record[:to_account].to_s.green.bold}
           #{(Console.format_money(record[:amount].round(2)) + ' ' + record[:currency]).bold}
           #{record[:description]}
           
@@ -60,7 +60,7 @@ module PayLog
         value = Console.format_money(value)
       end
 
-      "#{name.to_s.gsub('_', ' ').capitalize.blue.bold}#{':'.bold} #{value.green.bold}"
+      "#{name.to_s.gsub('_', ' ').capitalize.blue.bold}#{':'.bold} #{value.to_s.green.bold}"
     end
 
     def self.check_empty_fields(record, fields)
