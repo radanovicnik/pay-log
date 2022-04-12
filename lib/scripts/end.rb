@@ -1,9 +1,10 @@
 # Finishing program
 
 # Closing database
-if $db_modified
-  DB.run('VACUUM')
+DB.run('VACUUM') if $db_modified
+DB.disconnect
 
+if $db_modified
   FileUtils.cp(
     File.join(CONFIG[:database][:dir], CONFIG[:database][:file]),
     File.join(
@@ -13,7 +14,6 @@ if $db_modified
     )
   )
 end
-DB.disconnect
 
 # Checking the number of backups
 backups = Dir.glob('db/backups/*.db').sort
