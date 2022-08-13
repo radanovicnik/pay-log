@@ -18,7 +18,10 @@ config_tmp = {}
 begin
   config_tmp = YAML.load_file 'config/default.yml'
 rescue StandardError => e
-  STDERR.puts "Default configuration file missing (config/default.yml)!\n#{e.full_message}"
+  STDERR.puts(
+    "Default configuration file missing (config/default.yml)!\n" +
+    "[#{e.class}] #{e.message} - #{e.backtrace[0]}"
+  )
   exit false
 end
 
@@ -26,7 +29,7 @@ if File.exist? 'config/custom.yml'
   begin
     config_tmp.deep_merge!(YAML.load_file('config/custom.yml'))
   rescue StandardError => e
-    STDERR.puts 'Unable to read custom config file (config/custom.yml).'
+    puts 'Custom configuration file (config/custom.yml) is missing. Using default options.'
   end
 end
 CONFIG = config_tmp
@@ -45,7 +48,10 @@ begin
     case_sensitive_like: CONFIG[:database][:case_sensitive_like]
   )
 rescue StandardError => e
-  STDERR.puts "Couldn't connect to database!\n#{e.full_message}"
+  STDERR.puts(
+    "Couldn't connect to database!\n" + 
+    "[#{e.class}] #{e.message} - #{e.backtrace[0]}"
+  )
   exit false
 end
 DB.loggers << Logger.new(

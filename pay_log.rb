@@ -1,8 +1,11 @@
 require_relative 'lib/scripts/start'
 require_all 'lib/classes'
 
-# Modes:
-# :menu, :edit, :delete, :list
+##
+## Modes:
+## :menu, :edit, :delete, :list
+##
+
 mode = :menu
 prompt = DEFAULT_PROMPT
 command = ''
@@ -14,7 +17,10 @@ puts PayLog::Content.title
 loop do
   case mode
 
-  # Main menu
+  #################
+  ##  Main menu  ##
+  #################
+
   when :menu
     record_id = nil
     command = PayLog::Console.get_input prompt
@@ -81,7 +87,11 @@ loop do
       next
     end
 
-  # Edit record
+
+  ###################
+  ##  Edit record  ##
+  ###################
+
   when :edit
     record = {}
     old_record = {}
@@ -229,7 +239,7 @@ loop do
             new_record_id = record_id
           end
         rescue ArgumentError => e
-          puts e.message
+          STDERR.puts "[#{e.class}] #{e.message} - #{e.backtrace[0]}"
         else
           puts "\nRecord saved!\n\n"
           puts PayLog::DbTable.record_to_string(table, PayLog::DbTable.get_by_id(table, new_record_id))
@@ -244,7 +254,11 @@ loop do
       end
     end
 
-  # Delete record
+
+  #####################
+  ##  Delete record  ##
+  #####################
+
   when :delete
     replacement_account = nil
     old_record = PayLog::DbTable.get_by_id(table, record_id)
@@ -295,7 +309,7 @@ loop do
           begin
             PayLog::DbTable.delete(table, record_id, replacement_account)
           rescue ArgumentError => e
-            puts e.message
+            STDERR.puts "[#{e.class}] #{e.message} - #{e.backtrace[0]}"
           else
             puts "Record deleted.\n\n"
           ensure
@@ -313,7 +327,11 @@ loop do
       end
     end
 
-  # Display records
+
+  #######################
+  ##  Display records  ##
+  #######################
+
   when :list
     filters = {
       search_word: nil,
