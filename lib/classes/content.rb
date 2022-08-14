@@ -1,9 +1,5 @@
 module PayLog
   module Content
-    def self.n
-      Module.nesting
-    end
-
     def self.title
       title_text = <<~TITLE_TEXT
 

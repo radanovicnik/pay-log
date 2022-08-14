@@ -6,10 +6,6 @@ module PayLog
       currencies: :currencies
     }
 
-    def self.n
-      Module.nesting
-    end
-
     def self.get_by_id(table, record_id)
       DB[@@db_table_name[table]].first(id: record_id)
     end

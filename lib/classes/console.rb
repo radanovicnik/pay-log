@@ -1,9 +1,5 @@
 module PayLog
   module Console
-    def self.n
-      Module.nesting
-    end
-
     def self.get_input(prompt = 'pay_log> ')
       command = Readline.readline(prompt, true).to_s.strip
       Readline::HISTORY.pop if command.empty?
