@@ -1,3 +1,5 @@
+-- Drop DB objects
+
 DROP VIEW  IF EXISTS  v_accounts;
 DROP VIEW  IF EXISTS  v_payments;
 DROP TABLE  IF EXISTS  payments;

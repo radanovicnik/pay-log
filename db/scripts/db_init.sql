@@ -1,3 +1,5 @@
+-- Create DB objects
+
 -- Tables
 
 CREATE TABLE  IF NOT EXISTS  currencies (

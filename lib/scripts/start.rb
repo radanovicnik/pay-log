@@ -40,6 +40,11 @@ end
 
 $db_modified = false
 
+db_exist = true
+unless File.exist? File.join(CONFIG[:database][:dir], CONFIG[:database][:file])
+  db_exist = false
+end
+
 begin
   DB = Sequel.sqlite(
     File.join(CONFIG[:database][:dir], CONFIG[:database][:file]),
@@ -66,3 +71,5 @@ DEFAULT_PROMPT = 'pay_log> '.freeze
 DEFAULT_UNKNOWN_ACCOUNT = 'other'.freeze
 DEFAULT_PAGE_SIZE = CONFIG[:list_page_size]
 MAX_CHOICES = CONFIG[:max_choices]
+
+DB.run(File.read('db/scripts/db_init.sql')) unless db_exist
