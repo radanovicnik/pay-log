@@ -1,15 +1,21 @@
 module PayLog
   module DbTable
+    @@db_table_name = {
+      accounts: :v_accounts,
+      payments: :v_payments,
+      currencies: :currencies
+    }
+
     def self.n
       Module.nesting
     end
 
     def self.get_by_id(table, record_id)
-      DB[:"v_#{table}"].first(id: record_id)
+      DB[@@db_table_name[table]].first(id: record_id)
     end
 
     def self.get_all(table, opts = {})
-      query = DB[:"v_#{table}"]
+      query = DB[@@db_table_name[table]]
 
       unless opts[:search_word].to_s.empty?
         case table
@@ -21,18 +27,25 @@ module PayLog
               .or(Sequel.like(:amount, "#{opts[:search_word]}"))
               .or(Sequel.like(:from_account, "%#{opts[:search_word]}%"))
               .or(Sequel.like(:to_account, "%#{opts[:search_word]}%"))
+        when :currencies
+          query = query.where(Sequel.like(:name, "%#{opts[:search_word]}%"))
         end
       end
-      
-      query.limit(opts[:limit], opts[:offset])
-          .order(Sequel.desc(:created_at))
-          .all
+
+      case table
+      when :accounts, :payments
+        query = query.order(Sequel.desc(:created_at))
+      when :currencies
+        query = query.order(Sequel.desc(:id))
+      end
+
+      query.limit(opts[:limit], opts[:offset]).all
     end
 
     def self.record_to_string(table, record)
       record_str = ''
-      columns = []
       return '' if record.to_h.empty?
+
       case table
       when :accounts
         balance_str = Console.format_money(record[:balance].round(2)) + ' ' + record[:currency]
@@ -49,7 +62,12 @@ module PayLog
           #{record[:from_account].to_s.red.bold} #{'->'.bold} #{record[:to_account].to_s.green.bold}
           #{(Console.format_money(record[:amount].round(2)) + ' ' + record[:currency]).bold}
           #{record[:description]}
-          
+
+        RECORD_STR
+      when :currencies
+        record_str = <<~RECORD_STR
+          [#{record[:id]}] #{record[:name].to_s.bold}
+
         RECORD_STR
       end
       record_str
@@ -71,6 +89,10 @@ module PayLog
       return nil
     end
 
+    def self.currency_exist?(name)
+      !DB[:currencies].where(Sequel.like(:name, name)).empty?
+    end
+
     def self.handle_existing_account(name, currency_id)
       check_record = DB[:accounts]
           .where(Sequel.like(:name, name))
@@ -78,6 +100,14 @@ module PayLog
           .first
       unless check_record.nil?
         raise ArgumentError.new("Account \"#{name}\" already exists! (ID: #{check_record[:id]})")
+      end
+      return nil
+    end
+
+    def self.handle_existing_currency(name)
+      check_record = DB[:currencies].where(Sequel.like(:name, name)).first
+      unless check_record.nil?
+        raise ArgumentError.new("Currency \"#{name}\" already exists! (ID: #{check_record[:id]})")
       end
       return nil
     end
@@ -91,9 +121,18 @@ module PayLog
       if id.nil?
         id = DB[:accounts].insert(
           name: name,
-          balance: 0,
           currency_id: currency_id
         )
+        $db_modified = true
+      end
+      return id
+    end
+
+    def self.find_or_create_currency(name)
+      record = DB[:currencies].where(Sequel.like(:name, name)).first
+      id = record.nil? ? nil : record[:id]
+      if id.nil?
+        id = DB[:currencies].insert(name: name)
         $db_modified = true
       end
       return id
@@ -114,16 +153,17 @@ module PayLog
 
     def self.insert(table, record)
       new_record = {}
-      tmp = DB[:currencies].first(Sequel.like(:name, record[:currency]))
-      currency_id = tmp.nil? ? nil : tmp[:id]
       new_record_id = nil
 
       case table
       when :accounts
-        check_empty_fields(record, %i(name balance currency))
+        check_empty_fields(record, %i(name currency))
 
-        new_record.merge! record.slice(:name, :balance)
+        currency_id = find_or_create_currency(record[:currency])
+
+        new_record[:name] = record[:name]
         new_record[:currency_id] = currency_id
+        new_balance = record[:balance] || 0.to_d
 
         # throw exception if trying to insert an existing account
         handle_existing_account(new_record[:name], currency_id)
@@ -131,12 +171,12 @@ module PayLog
         DB.transaction do
           new_record_id = DB[:accounts].insert(new_record)
 
-          if new_record[:balance] != 0.to_d
+          if new_balance != 0.to_d
             insert(:payments, {
-              from_name: (new_record[:balance] > 0.to_d) ? DEFAULT_UNKNOWN_ACCOUNT : account_name,
-              to_name: (new_record[:balance] > 0.to_d) ? account_name : DEFAULT_UNKNOWN_ACCOUNT,
+              from_name: (new_balance > 0.to_d) ? DEFAULT_UNKNOWN_ACCOUNT : new_record[:name],
+              to_name: (new_balance > 0.to_d) ? new_record[:name] : DEFAULT_UNKNOWN_ACCOUNT,
               currency: record[:currency],
-              amount: new_record[:balance].abs,
+              amount: new_balance.abs,
               description: '[SYSTEM] Setting account balance.'
             })
           end
@@ -145,8 +185,10 @@ module PayLog
       when :payments
         check_empty_fields(record, %i(description amount currency from_name to_name))
 
+        currency_id = find_or_create_currency(record[:currency])
+
         new_record.merge! record.slice(:description, :amount)
-        
+
         DB.transaction do
           %w(from to).each do |prefix|
             account_name = record[:"#{prefix}_name"]
@@ -164,6 +206,17 @@ module PayLog
             updated_at: Time.now.to_i
           )
           new_record_id = DB[:payments].insert(new_record)
+        end
+
+      when :currencies
+        check_empty_fields(record, %i(name))
+        new_record[:name] = record[:name]
+
+        # throw exception if trying to insert an existing currency
+        handle_existing_currency(new_record[:name])
+
+        DB.transaction do
+          new_record_id = DB[:currencies].insert(new_record)
         end
       end
 
@@ -265,6 +318,20 @@ module PayLog
             updated_count = DB[:payments].where(id: id).update(new_data)
           end
         end
+
+      when :currencies
+        if !record[:name].nil? && record[:name] != old_record[:name]
+          new_data[:name] = record[:name]
+        end
+
+        # throw exception if trying to rename to existing currency
+        handle_existing_currency(new_data[:name]) unless new_data[:name].nil?
+
+        DB.transaction do
+          unless new_data.empty?
+            updated_count = DB[:currencies].where(id: id).update(new_data)
+          end
+        end
       end
 
       $db_modified = true
@@ -323,6 +390,16 @@ module PayLog
           )
           deleted_count = DB[:payments].where(id: id).delete
         end
+
+      when :currencies
+        account_ids = DB[:accounts].where(currency_id: id).all.map { |x| x[:id] }
+        %w(from to).each do |prefix|
+          DB[:payments].where(:"#{prefix}_account_id" => account_ids).delete
+        end
+
+        DB[:accounts].where(currency_id: id).delete
+        DB[:currencies].where(id: id).delete
+
       end
 
       $db_modified = true

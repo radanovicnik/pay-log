@@ -21,7 +21,7 @@ module PayLog
         Simple commands:
           [q]uit, [?] help
         For viewing or editing records, first pick a type (again using first letter):
-          [a]ccounts, [p]ayments
+          [a]ccounts, [p]ayments, [c]urrencies
         Then choose what you want to do:
           [e]dit (an existing record, or create a new one),
           [d]elete (an existing record),
@@ -73,6 +73,11 @@ module PayLog
           Type first letters to fill out these fields:
             [f]rom_name, [t]o_name, [d]escription, [a]mount, [c]urrency
         MESSAGE_TEXT
+      when :currencies
+        help_message << <<~MESSAGE_TEXT
+          Type first letter to fill out this field:
+            [n]ame
+        MESSAGE_TEXT
       end
       help_message << <<~MESSAGE_TEXT
         Actions:
@@ -96,6 +101,11 @@ module PayLog
         help_message << <<~MESSAGE_TEXT
           You are about to delete this payment record.
           Money will be returned to respective accounts.
+        MESSAGE_TEXT
+      when :currencies
+        help_message << <<~MESSAGE_TEXT
+          You are about to delete this currency.
+          BE WARNED: This will delete every account and every payment using this currency!
         MESSAGE_TEXT
       end
       help_message << <<~MESSAGE_TEXT

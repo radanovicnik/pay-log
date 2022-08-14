@@ -40,12 +40,14 @@ loop do
       table = :accounts
     when /^p/
       table = :payments
+    when /^c/
+      table = :currencies
     else
       puts PayLog::Content.error_unknown_command
       next
     end
 
-    command = command.scan(/^[ap]\s*([edl].*)/).flatten[0].to_s
+    command = command.scan(/^[apc]\s*([edl].*)/).flatten[0].to_s
 
     # table commands
     case command
@@ -101,6 +103,8 @@ loop do
         record = %i(name balance currency).map{|x| [x, nil]}.to_h
       when :payments
         record = %i(from_name to_name description amount currency).map{|x| [x, nil]}.to_h
+      when :currencies
+        record = {name: nil}
       end
       puts
     else
@@ -139,6 +143,30 @@ loop do
           if tmp.nil?
             puts PayLog::Content.error_invalid_value(field)
           else
+            record[field] = tmp
+            puts PayLog::DbTable.field_to_string(field, record[field])
+          end
+          next
+        when /^c/
+          field = :currency
+          tmp = command.scan(/^c\s*(.*)/).flatten[0].to_s.strip.upcase
+          if tmp.empty?
+            puts PayLog::Content.error_invalid_value(field)
+          elsif !record_id.nil?
+            puts(
+              "Cannot change the currency for an existing account. " +
+              "You can create a new account with this currency."
+            )
+          else
+            unless PayLog::DbTable.currency_exist?(tmp)
+              print "Currency you entered is not in database.\nWould you like to add it? [y/n] "
+              command = gets.strip.downcase
+
+              unless command == 'y'
+                puts "Cancelled."
+                next
+              end
+            end
             record[field] = tmp
             puts PayLog::DbTable.field_to_string(field, record[field])
           end
@@ -205,20 +233,44 @@ loop do
             puts PayLog::DbTable.field_to_string(field, record[field])
           end
           next
+        when /^c/
+          field = :currency
+          tmp = command.scan(/^c\s*(.*)/).flatten[0].to_s.strip.upcase
+          if tmp.empty?
+            puts PayLog::Content.error_invalid_value(field)
+          elsif !record_id.nil?
+            puts 'Cannot change the currency of an existing payment.'
+          else
+            unless PayLog::DbTable.currency_exist?(tmp)
+              print "Currency you entered is not in database.\nWould you like to add it? [y/n] "
+              command = gets.strip.downcase
+
+              unless command == 'y'
+                puts "Cancelled."
+                next
+              end
+            end
+            record[field] = tmp
+            puts PayLog::DbTable.field_to_string(field, record[field])
+          end
+          next
+        end
+      when :currencies
+        case command
+        when /^n/
+          field = :name
+          tmp = command.scan(/^n\s*(.*)/).flatten[0].to_s.strip.upcase
+          if tmp.empty?
+            puts PayLog::Content.error_invalid_value(field)
+          else
+            record[field] = tmp
+            puts PayLog::DbTable.field_to_string(field, record[field])
+          end
+          next
         end
       end
 
       case command
-      when /^c/
-        field = :currency
-        tmp = command.scan(/^c\s*(.*)/).flatten[0].to_s.strip.upcase
-        if tmp.empty? || !CURRENCIES.include?(tmp)
-          puts PayLog::Content.error_invalid_value(field)
-        else
-          record[field] = tmp
-          puts PayLog::DbTable.field_to_string(field, record[field])
-        end
-        next
       when '?'
         puts PayLog::Content.mode_edit_help(table)
         next
@@ -239,7 +291,7 @@ loop do
             new_record_id = record_id
           end
         rescue ArgumentError => e
-          STDERR.puts "[#{e.class}] #{e.message} - #{e.backtrace[0]}"
+          puts e.message
         else
           puts "\nRecord saved!\n\n"
           puts PayLog::DbTable.record_to_string(table, PayLog::DbTable.get_by_id(table, new_record_id))
@@ -309,7 +361,7 @@ loop do
           begin
             PayLog::DbTable.delete(table, record_id, replacement_account)
           rescue ArgumentError => e
-            STDERR.puts "[#{e.class}] #{e.message} - #{e.backtrace[0]}"
+            puts e.message
           else
             puts "Record deleted.\n\n"
           ensure

@@ -62,7 +62,6 @@ DB.loggers << Logger.new(
 DB.loggers << Logger.new(STDOUT) if CONFIG[:db_log][:log_to_stdout]
 
 START_TIME = Time.now.freeze
-CURRENCIES = DB[:currencies].all.map{|c| c[:name]}.freeze
 DEFAULT_PROMPT = 'pay_log> '.freeze
 DEFAULT_UNKNOWN_ACCOUNT = 'other'.freeze
 DEFAULT_PAGE_SIZE = CONFIG[:list_page_size]
